@@ -1,5 +1,19 @@
 # Pre-Matching-based-Hierarchical-Auction
 
+## 运行环境
+
+### 创建环境
+
+```conda
+ conda create -n PMHA  python=3.9  
+```
+
+### 激活环境
+
+```conda
+conda activate PMHA
+```
+
 ## 提交规范
 
 ```
