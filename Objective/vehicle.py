@@ -1,5 +1,5 @@
 from typing import List
-from Objective.mobility import mobility
+from Objective.mobility import mobility, get_vehicle_trajectories
 
 class vehicle(object):
     '''
@@ -46,3 +46,19 @@ class vehicle(object):
             + "\navaliable_computing_capability: " + self.get_avaliable_computing_capability() \
             + "\ntransmission_power: " + self.get_transmission_power()
             
+
+def generate_vehicle_list(
+    vehicle_num: int,
+    slot_length: int,
+    file_name: str,
+    min_computing_capability: float,
+    max_computing_capability: float,
+    min_transmission_power: float,
+    max_transmission_power: float,
+) -> List(vehicle):
+    mobilities_list : List(List(mobility)) = get_vehicle_trajectories(
+        vehicle_num = vehicle_num,
+        slot_length = slot_length,
+        file_name = file_name,
+    )
+    pass
