@@ -77,7 +77,7 @@ def generate_task_set(
 def generate_task_set_test():
     tasks = generate_task_set(
         task_num = 10,
-        distribution = "normal",
+        distribution = "uniform",
         min_input_data_size = 1,
         max_input_data_size = 100,
         min_cqu_cycles = 1,
