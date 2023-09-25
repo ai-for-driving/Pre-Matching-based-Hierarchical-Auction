@@ -1,3 +1,4 @@
+from typing import List
 class mobility(object):
     '''the mobility of a vehicle is defined by its position, speed and direction'''
     def __init__(
@@ -23,3 +24,11 @@ class mobility(object):
     
     def get_direction(self) -> float:
         return self._direction
+    
+    
+def get_vehicle_trajectories(
+    vehicle_num: int,
+    slot_length: int,
+    file_name: str,
+) -> List(List(mobility)):
+    pass
