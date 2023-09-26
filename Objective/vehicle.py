@@ -46,6 +46,10 @@ class vehicle(object):
             + "\navaliable_computing_capability: " + self.get_avaliable_computing_capability() \
             + "\ntransmission_power: " + self.get_transmission_power()
             
+def get_vehicle_location(vehicle_instance : vehicle, now : int) -> mobility:
+    return vehicle_instance.get_mobility(now)
+
+
 
 def generate_vehicle_list(
     vehicle_num: int,

@@ -5,7 +5,7 @@ import math
 # TODO
 # define calculate_distance(location_1: mobility, location_2: mobility) in Objective.mobility
 from Objective.mobility import mobility, calculate_distance 
-from Objective.vehicle import vehicle
+from Objective.vehicle import vehicle, get_vehicle_location
 
 class edge_node(object):
     def __init__(
@@ -40,6 +40,12 @@ class edge_node(object):
     # 我们调用时直接使用 edge.get_mobility() 
     def get_mobility(self) -> mobility:  
         return self._mobility
+    
+    def get_computing_capability(self) -> float:
+        return self._computing_capability
+    
+    def get_communication_range(self) -> float:
+        return self._communication_range
 
     # 由于边缘节点在处理任务时，任务不一定能在单位时间片内处理完成，其有可能会占有多个时间片
     # 因此, 我们还需要再增加一个变量, 记录可用的computing_capability
@@ -47,22 +53,20 @@ class edge_node(object):
         return self._availiable_computing_capability[now]
     
     # added by near, the edge node should have storage capability
-    def get_availiable_storage_capability(self, now) -> float:
+    def get_availiable_storage_capability(self, now: int) -> float:
         return self._availiable_storage_capability[now]
 
     # 这个函数是用来更新可用的computing_capability的
     # 从 now 开始, 一共 duration 个时间片, 每个时间片消耗的computing_capability是 consumed_computing_capability
     def set_consumed_computing_capability(self, consumed_computing_capability: float, now: int, duration: int) -> None:
-        pass
+        return self._availiable_computing_capability[now] - duration * consumed_computing_capability
     
     # 和上面的函数类似
-    def set_consumed_storage_capability(self, consumed_storage_capability: float, duration: int) -> None:
-        pass
+    def set_consumed_storage_capability(self, consumed_storage_capability: float, now: int, duration: int) -> None:
+        return self._availiable_storage_capability[now] - duration * consumed_storage_capability
 
-    # def calculate_distance(self, x1, x2, y1, y2, current_time) -> float:
-    #     pass
-    # 这里的 x, y 是通过车辆轨迹点（经纬度坐标）处理后映射到 所选地图范围内 的平面直角坐标系下的 二维坐标
-    # 所以, 2个点的距离运算直接用欧式距离就行
+def get_edge_node_location(edge_node_instance : edge_node) -> mobility:
+        return edge_node_instance.get_mobility()
         
 
 def generate_edge_nodes(
@@ -99,11 +103,7 @@ def get_vehicles_under_coverage_of_edge_nodes(
         for j in range(num_edge_nodes):
             vehicle = vehicles[i]
             edge_node = edge_nodes[j]
-            distance = calculate_distance(edge_node.mobility.location_x, 
-                                          vehicle.mobility.location_x, 
-                                          edge_node.mobility.location_y,
-                                          vehicle.mobility.location_y,
-                                          now)
+            distance = calculate_distance(get_vehicle_location(vehicle, now), get_edge_node_location(edge_node))
             if(distance <= V2I_distance):
                 result[i,j] = 1
 
