@@ -24,10 +24,7 @@ class mobility(object):
     
     def get_direction(self) -> float:
         return self._direction
-    
-def calculate_distance(mobility1: mobility, mobility2: mobility) -> float:
-    return ((mobility1.get_x() - mobility2.get_x()) ** 2 + (mobility1.get_y() - mobility2.get_y()) ** 2) ** 0.5
-    
+
     
 def get_vehicle_trajectories(
     vehicle_num: int,

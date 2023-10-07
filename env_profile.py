@@ -23,6 +23,8 @@ class env_profile(object):
         max_task_arrival_rate_of_vehicles: float,
         vehicle_distribution: str,
         edge_num: int,
+        I2I_transmission_rate: float,
+        I2I_transmission_weight: float,
         min_computing_capability_of_edges: float,
         max_computing_capability_of_edges: float,
         min_storage_capability_of_edges: float,
@@ -33,8 +35,8 @@ class env_profile(object):
         edge_distribution: str,
         cloud_computing_capability: float,
         cloud_storage_capability: float,
-        min_wired_bandwidth: float,
-        max_wired_bandwidth: float,
+        min_I2C_wired_bandwidth: float,
+        max_I2C_wired_bandwidth: float,
         cloud_distribution: str,
     ) -> None:
         self._slot_length: int = slot_length
@@ -66,11 +68,13 @@ class env_profile(object):
         self._min_communication_range_of_edges: float = min_communication_range_of_edges
         self._max_communication_range_of_edges: float = max_communication_range_of_edges
         self._edge_mobility_file_name: str = edge_mobility_file_name
+        self._I2I_transmission_rate: float = I2I_transmission_rate
+        self._I2I_transmission_weight: float = I2I_transmission_weight
         self._edge_distribution: str = edge_distribution
         self._cloud_computing_capability: float = cloud_computing_capability
         self._cloud_storage_capability: float = cloud_storage_capability
-        self._min_wired_bandwidth: float = min_wired_bandwidth
-        self._max_wired_bandwidth: float = max_wired_bandwidth
+        self._min_I2C_wired_bandwidth: float = min_I2C_wired_bandwidth
+        self._max_I2C_wired_bandwidth: float = max_I2C_wired_bandwidth
         self._cloud_distribution: str = cloud_distribution
         
         
@@ -158,6 +162,12 @@ class env_profile(object):
     def get_max_communication_range_of_edges(self) -> float:
         return self._max_communication_range_of_edges
     
+    def get_I2I_transmission_rate(self) -> float:
+        return self._I2I_transmission_rate
+    
+    def get_I2I_transmission_weight(self) -> float:
+        return self._I2I_transmission_weight
+    
     def get_edge_mobility_file_name(self) -> str:
         return self._edge_mobility_file_name
     
@@ -170,11 +180,11 @@ class env_profile(object):
     def get_cloud_storage_capability(self) -> float:
         return self._cloud_storage_capability
     
-    def get_min_wired_bandwidth(self) -> float:
-        return self._min_wired_bandwidth
+    def get_min_I2C_wired_bandwidth(self) -> float:
+        return self._min_I2C_wired_bandwidth
     
-    def get_max_wired_bandwidth(self) -> float:
-        return self._max_wired_bandwidth
+    def get_max_I2C_wired_bandwidth(self) -> float:
+        return self._max_I2C_wired_bandwidth
     
     def get_cloud_distribution(self) -> str:
         return self._cloud_distribution

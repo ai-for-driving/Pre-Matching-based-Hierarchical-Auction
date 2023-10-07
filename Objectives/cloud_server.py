@@ -1,5 +1,5 @@
 from typing import List
-import random
+from Utilities.wired_bandwidth import get_wired_bandwidth_between_edge_nodes_and_the_cloud
 
 class cloud_server(object):
     def __init__(
@@ -27,7 +27,7 @@ class cloud_server(object):
     def get_availiable_storage_capability(self, now: int) -> float:
         return self._avaliable_storage_capability[now]
     
-    def get_wired_bandwidth(self, edge_node_index: int) -> float:
+    def get_wired_bandwidth_between_edge_node_and_cloud(self, edge_node_index: int) -> float:
         return self._wired_bandwidth[edge_node_index]
     
     def set_consumed_computing_capability(self, consumed_computing_capability: float, now: int, duration: int) -> None:
@@ -43,13 +43,18 @@ class cloud_server(object):
 def generate_cloud(
     computing_capability: float,
     storage_capability: float,
+    edge_node_num: int,
     time_slot_num: int,
     min_wired_bandwidth: float,
     max_wired_bandwidth: float,
     distribution: str,
 ) -> cloud_server:
     if distribution == "uniform":
-        wired_bandwidths = [random.uniform(min_wired_bandwidth, max_wired_bandwidth) for _ in range(time_slot_num)]
+        wired_bandwidths = get_wired_bandwidth_between_edge_nodes_and_the_cloud(
+            min_wired_bandwidth=min_wired_bandwidth,
+            max_wired_bandwidth=max_wired_bandwidth,
+            edge_node_num=edge_node_num,
+        )
         return cloud_server(computing_capability, storage_capability, time_slot_num, wired_bandwidths)
     else:
         raise Exception("No such distribution: " + distribution + " for cloud")

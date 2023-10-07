@@ -39,13 +39,13 @@ class action(object):
         self._computing_resource_decision = computing_resource_decision
         return None
     
-    def get_offloading_decision_of_vehicle(self, client_vehicle_index: int) -> int:
+    def get_offloading_decision_of_client_vehicle(self, client_vehicle_index: int) -> int:
         for i in range(self._offloading_decision.shape[1]):
             if self._offloading_decision[client_vehicle_index][i] != 0:
                 return self._offloading_decision[client_vehicle_index][i]
         raise Exception("No offloading decision of vehicle " + str(client_vehicle_index))
     
-    def get_computing_resource_decision_of_vehicle(self, client_vehicle_index: int) -> float:
+    def get_computing_resource_decision_of_client_vehicle(self, client_vehicle_index: int) -> float:
         for i in range(self._computing_resource_decision.shape[1]):
             if self._computing_resource_decision[client_vehicle_index][i] != 0:
                 return self._computing_resource_decision[client_vehicle_index][i]
@@ -219,33 +219,13 @@ class action(object):
             if np.sum(self._offloading_decision[i]) != 1:
                 return False
         for i in range(2 + self._server_vehicle_number + self._edge_node_number):
-            if i == 0:
+            if i == 0:  # local
                 for j in range(self._client_vehicle_number):
                     if self._offloading_decision[j][i] > 1:
                         return False
-            if np.sum(self._offloading_decision[:][i]) > 1:
-                return False
+            else:    # server vehicles, edge nodes, and the cloud
+                if np.sum(self._offloading_decision[:][i]) > 1:
+                    return False
         return True
 
-def random_action(
-    client_vehicle_number : int,
-    server_vehicle_number : int,
-    edge_node_number : int,
-    cloud_node_number : int,
-) -> action:
-    offloading_decision = np.zeros((client_vehicle_number, server_vehicle_number + edge_node_number + cloud_node_number), dtype = np.int)
-    computing_resource_decision = np.zeros((client_vehicle_number, server_vehicle_number + edge_node_number + cloud_node_number), dtype = np.float)
-    for _ in range(client_vehicle_number):
-        offloading_node = np.random.randint(0, server_vehicle_number + edge_node_number + cloud_node_number)
-        offloading_decision[_, offloading_node] = 1
-        computing_resource_decision[_, offloading_node] = np.random.uniform(0, 1)
-    action_obj = action(client_vehicle_number, server_vehicle_number, edge_node_number, cloud_node_number)
-    action_obj.set_offloading_decision(offloading_decision)
-    action_obj.set_computing_resource_decision(computing_resource_decision)
-    for i in range(2 + server_vehicle_number + edge_node_number):
-        if np.sum(action_obj.get_computing_resource_decision()[:][i]) > 1:
-            soft_max = np.exp(action_obj.get_computing_resource_decision()[:][i]) / np.sum(np.exp(action_obj.get_computing_resource_decision()[:][i]))
-            action_obj.set_computing_resource_decision_of_offloaded_node(i, soft_max)
-    if not action_obj.check_validity():
-        raise Exception("Invalid action")
-    return action_obj
+
