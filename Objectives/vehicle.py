@@ -62,6 +62,12 @@ class vehicle(object):
     def get_task_arrival_rate(self) -> float:
         return self._task_arrival_rate
     
+    def get_tasks(self) -> List[Tuple]:
+        return self._tasks
+    
+    def get_tasks_by_time(self, now : int) -> List[Tuple]:
+        return [task for task in self._tasks if task[0] == now]
+    
     def set_consumed_computing_capability(self, consumed_computing_capability: float, now: int, duration: int) -> None:
         for i in range(now, now + duration):
             self._avaliable_computing_capability[i] = self._avaliable_computing_capability[i] - consumed_computing_capability
@@ -94,19 +100,6 @@ class vehicle(object):
             + "\ntransmission_power: " + self.get_transmission_power() \
             + "\ncommunication_range: " + self.get_communication_range() \
             + "\ntask_arrival_rate: " + self.get_task_arrival_rate()
-            
-def get_vehicles_under_V2V_communication_range(
-    vehicles : List[vehicle],
-    now : int,
-) -> np.ndarray:
-    vehicle_num = len(vehicles)
-    vehicles_under_V2V_communication_range = np.zeros((vehicle_num, vehicle_num))
-    for i in range(vehicle_num):
-        for j in range(vehicle_num):
-            if i != j:
-                if calculate_distance(vehicles[i].get_mobility(now), vehicles[j].get_mobility(now)) <= vehicles[i].get_communication_range():
-                    vehicles_under_V2V_communication_range[i][j] = 1
-    return vehicles_under_V2V_communication_range
 
 
 def generate_vehicles(

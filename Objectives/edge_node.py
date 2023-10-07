@@ -82,23 +82,6 @@ def generate_edge_nodes(
         raise Exception("distribution is not supported")
         
 
-def get_vehicles_under_coverage_of_edge_nodes(
-    vehicles: List[vehicle],
-    edge_nodes: List[edge_node],
-    now: int,
-) -> np.ndarray:
-    num_vehicles = len(vehicles)
-    num_edge_nodes = len(edge_nodes)
-    result = np.zeros((num_vehicles, num_edge_nodes))
-    for i in range(num_vehicles):
-        for j in range(num_edge_nodes):
-            vehicle = vehicles[i]
-            edge_node = edge_nodes[j]
-            distance = calculate_distance(vehicle.get_mobility(now), edge_node.get_mobility(now))
-            if(distance <= edge_node.get_communication_range()):
-                result[i,j] = 1
-    return result
-
 def generate_edge_nodes_test():
     pass
 
