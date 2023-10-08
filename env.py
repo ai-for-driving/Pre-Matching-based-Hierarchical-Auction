@@ -1,14 +1,20 @@
+from Utilities.noma import obtain_channel_gains_between_client_vehicle_and_server_vehicles, obtain_channel_gains_between_vehicles_and_edge_nodes
+from Utilities.wired_bandwidth import get_wired_bandwidth_between_edge_node_and_other_edge_nodes
 from env_profile import env_profile
 from Objectives.task import task, generate_task_set
 from Objectives.vehicle import vehicle, generate_vehicles
-from Objectives.edge_node import edge_node, generate_edge_nodes, get_wired_bandwidth_between_edge_node_and_other_edge_nodes
+from Objectives.edge_node import edge_node, generate_edge_nodes
 from Objectives.cloud_server import cloud_server, generate_cloud
 from Utilities.vehicle_classification import get_client_and_server_vehicles
+from Utilities.distance_and_coverage import get_distance_matrix_between_client_vehicles_and_server_vehicles, get_distance_matrix_between_vehicles_and_edge_nodes    
+from Utilities.distance_and_coverage import get_vehicles_under_V2I_communication_range, get_vehicles_under_V2V_communication_range
 from typing import List, Tuple
+import numpy as np
 import time
 import pickle
 from strategy import action
-from Utilities.time_calculation import obtain_computing_time
+from Utilities.time_calculation import obtain_computing_time, obtain_transmission_time, obtain_wired_transmission_time
+from Utilities.time_calculation import compute_transmission_rate, compute_V2V_SINR, compute_V2I_SINR
 
 class env(object):
     
@@ -64,17 +70,6 @@ class env(object):
             distribution=profile.get_vehicle_distribution(),
         )
         
-        self._client_vehicles : List[vehicle] = []
-        self._server_vehicles : List[vehicle] = []
-        
-        self._client_vehicles, self._server_vehicles = get_client_and_server_vehicles(
-            now=self._now,
-            vehicles=self._vehicles,
-        )
-        
-        self._client_vehicle_num = len(self._client_vehicles)
-        self._server_vehicle_num = len(self._server_vehicles)
-        
         self._edge_nodes : List[edge_node] = generate_edge_nodes(
             file_name=profile.get_edge_mobility_file_name(),
             min_computing_capability=profile.get_min_computing_capability_of_edges(),
@@ -99,56 +94,438 @@ class env(object):
             max_wired_bandwidth=profile.get_max_I2C_wired_bandwidth(),
             distribution=profile.get_cloud_distribution(),
         )
+        
+        self._client_vehicles : List[vehicle] = []
+        self._server_vehicles : List[vehicle] = []
+        
+        self._client_vehicles, self._server_vehicles = get_client_and_server_vehicles(
+            now=self._now,
+            vehicles=self._vehicles,
+        )
+        
+        self._client_vehicle_num = len(self._client_vehicles)
+        self._server_vehicle_num = len(self._server_vehicles)
+
+        self._distance_matrix_between_client_vehicles_and_server_vehicles : np.ndarray = get_distance_matrix_between_client_vehicles_and_server_vehicles(
+            client_vehicles=self._client_vehicles,
+            server_vehicles=self._server_vehicles,
+            now=self._now,
+        )
+        self._distance_matrix_between_client_vehicles_and_edge_nodes : np.ndarray = get_distance_matrix_between_vehicles_and_edge_nodes(
+            client_vehicles=self._client_vehicles,
+            edge_nodes=self._edge_nodes,
+            now=self._now,
+        )
+        self._vehicles_under_V2V_communication_range : np.ndarray = get_vehicles_under_V2V_communication_range(
+            distance_matrix=self._distance_matrix_between_client_vehicles_and_server_vehicles,
+            client_vehicles=self._client_vehicles,
+            server_vehicles=self._server_vehicles,
+        )
+        self._vehicles_under_V2I_communication_range : np.ndarray = get_vehicles_under_V2I_communication_range(
+            client_vehicles=self._client_vehicles,
+            edge_nodes=self._edge_nodes,
+            now=self._now,
+        )
+        
+        self._channel_gains_between_client_vehicle_and_server_vehicles = obtain_channel_gains_between_client_vehicle_and_server_vehicles(
+            distance_matrix=self._distance_matrix_between_client_vehicles_and_server_vehicles,
+            client_vehicles=self._client_vehicles,
+            server_vehicles=self._server_vehicles,
+            path_loss_exponent=self._env_profile.get_path_loss_exponent(),
+        )
+        
+        self._channel_gains_between_client_vehicle_and_edge_nodes = obtain_channel_gains_between_vehicles_and_edge_nodes(
+            distance_matrix=self._distance_matrix_between_client_vehicles_and_edge_nodes,
+            client_vehicles=self._client_vehicles,
+            edge_nodes=self._edge_nodes,
+            path_loss_exponent=self._env_profile.get_path_loss_exponent(),
+        )
+        
         return None
     
     def step(self, now_action : action) -> None:
         if self._now > self._end_time:
             self.save_results()
         else:
-            if action.check_validity():
+            
+            client_vehicle_available_computing_capability = [client_vehicle.get_available_computing_capability() for client_vehicle in self._client_vehicles]
+            server_vehicle_available_computing_capability = [server_vehicle.get_available_computing_capability() for server_vehicle in self._server_vehicles]
+            edge_node_available_computing_capability = [edge_node.get_available_computing_capability() for edge_node in self._edge_nodes]
+            cloud_available_computing_capability = self._cloud.get_available_computing_capability()
+            
+            if now_action.check_validity():
                 
-                for client_vehicle in self._client_vehicles:
+                for client_vehicle_index in range(self._client_vehicle_num):
+                    client_vehicle : vehicle = self._client_vehicles[client_vehicle_index]
                     tasks : List[Tuple] = client_vehicle.get_tasks_by_time(self._now)
-                    task_offloading_decision = now_action.get_offloading_decision_of_client_vehicle(client_vehicle)
+                    task_offloading_decision = now_action.get_offloading_decision_of_client_vehicle()
                     computing_resource_decision = now_action.get_computing_resource_decision_of_client_vehicle(client_vehicle)
-                    if task_offloading_decision == 0:  # processing at local
-                        for task_tuple in tasks:
-                            self._task_num_at_time[self._now] += 1
+                    for task_tuple in tasks:
+                        self._task_num_at_time[self._now] += 1
+                        
+                        task_object : task = task_tuple[1]
+                        task_data_size = task_object.get_input_data_size()
+                        task_cycles = task_object.get_cqu_cycles()
+                        task_deadline = task_object.get_deadline()
+                        
+                        task_transmission_time = 0
+                        task_computing_time = 0
+                        task_processing_time = 0
+                        task_during_time = 0
+                        
+                        if task_offloading_decision == 0:  # processing at local                       
                             self._task_processed_at_local_at_time[self._now] += 1
                             
-                            task_object : task = task_tuple[1]
-                            task_data_size = task_object.get_input_data_size()
-                            task_cycles = task_object.get_cqu_cycles()
-                            task_deadline = task_object.get_deadline()
-                            
-                            task_transmission_time = 0
+                            allocated_computing_capability = \
+                                client_vehicle_available_computing_capability[client_vehicle_index] * computing_resource_decision
                             task_computing_time = obtain_computing_time(
                                 data_size=task_data_size,
                                 per_cycle_required=task_cycles,
-                                computing_capability=client_vehicle.get_avaliable_computing_capability() * computing_resource_decision,
+                                computing_capability=allocated_computing_capability
                             )
                             task_processing_time = task_transmission_time + task_computing_time
                             
                             if task_processing_time <= task_deadline:
                                 self._task_successfully_processed_num_at_time[self._now] += 1
-                                
                             
+                            task_during_time = np.floor(task_computing_time)
+                            self._client_vehicles[client_vehicle_index].set_consumed_computing_capability(
+                                consumed_computing_capability=allocated_computing_capability,
+                                now=self._now,
+                                duration=task_during_time,
+                            )
+                            self._client_vehicles[client_vehicle_index].set_consumed_storage_capability(
+                                consumed_storage_capability=task_data_size,
+                                now=self._now,
+                                duration=task_during_time,
+                            )
                                 
-                    elif task_offloading_decision >= 1 and task_offloading_decision <= self._server_vehicle_num:  # processing at server vehicle
-                        
-                        pass
-                    elif task_offloading_decision >= self._server_vehicle_num + 1 and \
-                        task_offloading_decision <= self._server_vehicle_num + self._env_profile.get_edge_num():  # processing at edge
-                        pass
-                    elif task_offloading_decision == self._server_vehicle_num + self._env_profile.get_edge_num() + 1:  # processing at the cloud
-                        pass
+                        elif task_offloading_decision >= 1 and \
+                            task_offloading_decision <= self._server_vehicle_num:  # processing at server vehicle
+                            self._task_processed_at_vehicle_at_time[self._now] += 1
+                            server_vehicle_index = task_offloading_decision - 1
+                            if self._vehicles_under_V2V_communication_range[client_vehicle_index][server_vehicle_index] == 1:
+                                
+                                task_transmission_time = self.obtain_V2V_transmission_time(
+                                    now_action=now_action,
+                                    client_vehicle_index=client_vehicle_index,
+                                    server_vehicle_index=server_vehicle_index,
+                                    task_data_size=task_data_size,
+                                )
+                                
+                                allocated_computing_capability = \
+                                    server_vehicle_available_computing_capability[server_vehicle_index] * computing_resource_decision
+                                task_computing_time = obtain_computing_time(
+                                    data_size=task_data_size,
+                                    per_cycle_required=task_cycles,
+                                    computing_capability=allocated_computing_capability
+                                )
+                                task_processing_time = task_transmission_time + task_computing_time
+                                
+                                if task_processing_time <= task_deadline:
+                                    self._task_successfully_processed_num_at_time[self._now] += 1
+                                
+                                task_computing_start_time = self._now + np.ceil(task_transmission_time)
+                                task_during_time = np.floor(task_computing_time)
+                                self._server_vehicles[server_vehicle_index] : vehicle .set_consumed_computing_capability(
+                                    consumed_computing_capability=allocated_computing_capability,
+                                    now=task_computing_start_time,
+                                    duration=task_during_time,
+                                )
+                                self._server_vehicles[server_vehicle_index] : vehicle .set_consumed_storage_capability(
+                                    consumed_storage_capability=task_data_size,
+                                    now=task_computing_start_time,
+                                    duration=task_during_time,
+                                )
+                                
+                            else:
+                                raise Exception("V2V communication range error")
+                        elif task_offloading_decision >= self._server_vehicle_num + 1 and \
+                            task_offloading_decision <= self._server_vehicle_num + self._env_profile.get_edge_num():  # processing at edge
+                            self._task_processed_at_edge_at_time[self._now] += 1
+                            
+                            edge_node_index = task_offloading_decision - self._server_vehicle_num - 1
+                            if self._vehicles_under_V2I_communication_range[client_vehicle_index][edge_node_index] == 1: # the client vehicle is under the communication range of the edge node
+                                self._task_processed_at_local_edge_at_time[self._now] += 1
+                                
+                                task_transmission_time = self.obtain_V2I_transmission_time(
+                                    now_action=now_action,
+                                    client_vehicle_index=client_vehicle_index,
+                                    edge_node_index=edge_node_index,
+                                    task_data_size=task_data_size,
+                                )
+                                
+                                allocated_computing_capability = \
+                                    edge_node_available_computing_capability[edge_node_index] * computing_resource_decision
+                                task_computing_time = obtain_computing_time(
+                                    data_size=task_data_size,
+                                    per_cycle_required=task_cycles,
+                                    computing_capability=allocated_computing_capability
+                                )
+                                
+                                task_processing_time = task_transmission_time + task_computing_time
+                                
+                                if task_processing_time <= task_deadline:
+                                    self._task_successfully_processed_num_at_time[self._now] += 1
+                                    
+                                task_computing_start_time = self._now + np.ceil(task_transmission_time)
+                                task_during_time = np.floor(task_computing_time)
+                                self._edge_nodes[edge_node_index] : edge_node .set_consumed_computing_capability(
+                                    consumed_computing_capability=allocated_computing_capability,
+                                    now=task_computing_start_time,
+                                    duration=task_during_time,
+                                )
+                                self._edge_nodes[edge_node_index] : edge_node .set_consumed_storage_capability(
+                                    consumed_storage_capability=task_data_size,
+                                    now=task_computing_start_time,
+                                    duration=task_during_time,
+                                )
+                                
+                            else:  # the client vehicle is not under the communication range of the edge node
+                                self._task_processed_at_other_edge_at_time[self._now] += 1
+                                
+                                task_v2i_transmission_time = 0
+                                task_i2i_transmission_time = 0
+                                
+                                for other_edge_node_index in range(self._env_profile.get_edge_num()):
+                                    if other_edge_node_index != edge_node_index:
+                                        if self._vehicles_under_V2I_communication_range[client_vehicle_index][other_edge_node_index] == 1:
+                                            task_v2i_transmission_time = self.obtain_V2I_transmission_time(
+                                                now_action=now_action,
+                                                client_vehicle_index=client_vehicle_index,
+                                                edge_node_index=other_edge_node_index,
+                                                task_data_size=task_data_size,
+                                            )
+                                            task_i2i_transmission_time = obtain_wired_transmission_time(
+                                                transmission_rate=self._wired_bandwidths_between_edge_node_and_other_edge_nodes[edge_node_index][other_edge_node_index],
+                                                data_size=task_data_size,
+                                            )
+                                            break
+                                
+                                task_transmission_time = task_v2i_transmission_time + task_i2i_transmission_time
+                                
+                                allocated_computing_capability = \
+                                    edge_node_available_computing_capability[edge_node_index] * computing_resource_decision
+                                
+                                task_computing_time = obtain_computing_time(
+                                    data_size=task_data_size,
+                                    per_cycle_required=task_cycles,
+                                    computing_capability=allocated_computing_capability
+                                )
+                                
+                                task_processing_time = task_transmission_time + task_computing_time
+                                
+                                if task_processing_time <= task_deadline:
+                                    self._task_successfully_processed_num_at_time[self._now] += 1
+                                    
+                                task_computing_start_time = self._now + np.ceil(task_transmission_time)
+                                task_during_time = np.floor(task_computing_time)
+                                self._edge_nodes[edge_node_index] : edge_node .set_consumed_computing_capability(
+                                    consumed_computing_capability=allocated_computing_capability,
+                                    now=task_computing_start_time,
+                                    duration=task_during_time,
+                                )
+                                self._edge_nodes[edge_node_index] : edge_node .set_consumed_storage_capability(
+                                    consumed_storage_capability=task_data_size,
+                                    now=task_computing_start_time,
+                                    duration=task_during_time,
+                                )
+                                
+                        elif task_offloading_decision == self._server_vehicle_num + self._env_profile.get_edge_num() + 1:  # processing at the cloud
+                            
+                            self._task_processed_at_cloud_at_time[self._now] += 1
+                            
+                            task_v2i_transmission_time = 0
+                            task_i2c_transmission_time = 0
+                            
+                            for edge_node_index in range(self._env_profile.get_edge_num()):
+                                if self._vehicles_under_V2I_communication_range[client_vehicle_index][other_edge_node_index] == 1:
+                                    task_v2i_transmission_time = self.obtain_V2I_transmission_time(
+                                        now_action=now_action,
+                                        client_vehicle_index=client_vehicle_index,
+                                        edge_node_index=edge_node_index,
+                                        task_data_size=task_data_size,
+                                    )
+                                    task_i2c_transmission_time = obtain_wired_transmission_time(
+                                        transmission_rate=self._cloud.get_wired_bandwidth_between_edge_node_and_cloud(edge_node_index=edge_node_index),
+                                        data_size=task_data_size,
+                                    )
+                                    break
+                                
+                            task_transmission_time = task_v2i_transmission_time + task_i2c_transmission_time
+                            
+                            allocated_computing_capability = \
+                                cloud_available_computing_capability * computing_resource_decision
+                            
+                            task_computing_time = obtain_computing_time(
+                                data_size=task_data_size,
+                                per_cycle_required=task_cycles,
+                                computing_capability=allocated_computing_capability
+                            )
+                            
+                            task_processing_time = task_transmission_time + task_computing_time
+                            if task_processing_time <= task_deadline:
+                                self._task_successfully_processed_num_at_time[self._now] += 1
+                                
+                            task_computing_start_time = self._now + np.ceil(task_transmission_time)
+                            task_during_time = np.floor(task_computing_time)
+                            self._cloud : cloud_server .set_consumed_computing_capability(
+                                consumed_computing_capability=allocated_computing_capability,
+                                now=task_computing_start_time,
+                                duration=task_during_time,
+                            )
+                            
+                            self._cloud : cloud_server .set_consumed_storage_capability(
+                                consumed_storage_capability=task_data_size,
+                                now=task_computing_start_time,
+                                duration=task_during_time,
+                            )
+            
+            self.update()
+                            
         return None
     
+    def obtain_V2V_transmission_time(
+        self, 
+        now_action : action, 
+        client_vehicle_index : int, 
+        server_vehicle_index : int, 
+        task_data_size : float,
+    ) -> float:
+        
+        intra_vehicle_interference = 0
+        client_vehicle_index_list = now_action.get_offloading_decision_at_server_vehicle(server_vehicle_index)
+        for other_client_vehicle_index in client_vehicle_index_list:
+            if other_client_vehicle_index != client_vehicle_index:
+                if np.abs(self._channel_gains_between_client_vehicle_and_server_vehicles[other_client_vehicle_index][server_vehicle_index]) ** 2 < \
+                    np.abs(self._channel_gains_between_client_vehicle_and_server_vehicles[client_vehicle_index][server_vehicle_index]) ** 2:
+                    intra_vehicle_interference += \
+                        np.abs(self._channel_gains_between_client_vehicle_and_server_vehicles[other_client_vehicle_index][server_vehicle_index]) ** 2 * \
+                            self._client_vehicles[other_client_vehicle_index].get_transmission_power()
+                            
+        inter_vehicle_interference = 0
+        for other_server_vehicle_index in range(self._server_vehicle_num):
+            if other_server_vehicle_index != server_vehicle_index:
+                client_vehicle_index_list = now_action.get_offloading_decision_at_server_vehicle(other_server_vehicle_index)
+                for other_client_vehicle_index in client_vehicle_index_list:
+                    if other_client_vehicle_index != client_vehicle_index:
+                        inter_vehicle_interference += \
+                            np.abs(self._channel_gains_between_client_vehicle_and_server_vehicles[other_client_vehicle_index][server_vehicle_index]) ** 2 * \
+                                self._client_vehicles[other_client_vehicle_index].get_transmission_power()
+        
+        sinr = compute_V2V_SINR(
+            white_gaussian_noise=self._env_profile.get_white_gaussian_noise(),
+            channel_gain=self._channel_gains_between_client_vehicle_and_server_vehicles[client_vehicle_index][server_vehicle_index],
+            transmission_power=self._client_vehicles[client_vehicle_index].get_transmission_power(),
+            intra_vehicle_interference=intra_vehicle_interference,
+            inter_vehicle_interference=inter_vehicle_interference,
+        )
+        
+        transmission_rate = compute_transmission_rate(
+            SINR=sinr,
+            bandwidth=self._env_profile.get_V2V_bandwidth(),
+        )
+        
+        task_transmission_time = obtain_transmission_time(
+            transmission_rate=transmission_rate,
+            data_size=task_data_size,
+        )
+        
+        return task_transmission_time
+    
+    def obtain_V2I_transmission_time(
+        self, 
+        now_action : action, 
+        client_vehicle_index : int, 
+        edge_node_index : int, 
+        task_data_size : float
+    ) -> float:
+        
+        intra_edge_interference = 0
+        client_vehicle_index_list = now_action.get_offloading_decision_at_edge_node(edge_node_index)
+        for other_client_vehicle_index in client_vehicle_index_list:
+            if other_client_vehicle_index != client_vehicle_index:
+                if np.abs(self._channel_gains_between_client_vehicle_and_edge_nodes[other_client_vehicle_index][edge_node_index]) ** 2 < \
+                    np.abs(self._channel_gains_between_client_vehicle_and_edge_nodes[client_vehicle_index][edge_node_index]) ** 2:
+                    intra_edge_interference += \
+                        np.abs(self._channel_gains_between_client_vehicle_and_edge_nodes[other_client_vehicle_index][edge_node_index]) ** 2 * \
+                            self._client_vehicles[other_client_vehicle_index].get_transmission_power()
+        
+        inter_edge_interference = 0
+        for other_edge_node_index in range(self._env_profile.get_edge_num()):
+            if other_edge_node_index != edge_node_index:
+                client_vehicle_index_list = now_action.get_offloading_decision_at_edge_node(other_edge_node_index)
+                for other_client_vehicle_index in client_vehicle_index_list:
+                    if other_client_vehicle_index != client_vehicle_index:
+                        inter_edge_interference += \
+                            np.abs(self._channel_gains_between_client_vehicle_and_edge_nodes[other_client_vehicle_index][edge_node_index]) ** 2 * \
+                                self._client_vehicles[other_client_vehicle_index].get_transmission_power()
+        
+        sinr = compute_V2I_SINR(
+            white_gaussian_noise=self._env_profile.get_white_gaussian_noise(),
+            channel_gain=self._channel_gains_between_client_vehicle_and_edge_nodes[client_vehicle_index][edge_node_index],
+            transmission_power=self._client_vehicles[client_vehicle_index].get_transmission_power(),
+            intra_edge_interference=intra_edge_interference,
+            inter_edge_interference=inter_edge_interference,
+        )
+        
+        transmission_rate = compute_transmission_rate(
+            SINR=sinr,
+            bandwidth=self._env_profile.get_V2I_bandwidth(),
+        )
+        
+        task_transmission_time = obtain_transmission_time(
+            transmission_rate=transmission_rate,
+            data_size=task_data_size,
+        )
+        
+        return task_transmission_time
+    
     def update(self) -> None:
+        
         self._now += 1
+        
         self._client_vehicles, self._server_vehicles = get_client_and_server_vehicles(
             now=self._now,
             vehicles=self._vehicles,
+        )
+        
+        self._client_vehicle_num = len(self._client_vehicles)
+        self._server_vehicle_num = len(self._server_vehicles)
+
+        self._distance_matrix_between_client_vehicles_and_server_vehicles : np.ndarray = get_distance_matrix_between_client_vehicles_and_server_vehicles(
+            client_vehicles=self._client_vehicles,
+            server_vehicles=self._server_vehicles,
+            now=self._now,
+        )
+        self._distance_matrix_between_client_vehicles_and_edge_nodes : np.ndarray = get_distance_matrix_between_vehicles_and_edge_nodes(
+            client_vehicles=self._client_vehicles,
+            edge_nodes=self._edge_nodes,
+            now=self._now,
+        )
+        self._vehicles_under_V2V_communication_range : np.ndarray = get_vehicles_under_V2V_communication_range(
+            distance_matrix=self._distance_matrix_between_client_vehicles_and_server_vehicles,
+            client_vehicles=self._client_vehicles,
+            server_vehicles=self._server_vehicles,
+        )
+        self._vehicles_under_V2I_communication_range : np.ndarray = get_vehicles_under_V2I_communication_range(
+            client_vehicles=self._client_vehicles,
+            edge_nodes=self._edge_nodes,
+            now=self._now,
+        )
+        
+        self._channel_gains_between_client_vehicle_and_server_vehicles = obtain_channel_gains_between_client_vehicle_and_server_vehicles(
+            distance_matrix=self._distance_matrix_between_client_vehicles_and_server_vehicles,
+            client_vehicles=self._client_vehicles,
+            server_vehicles=self._server_vehicles,
+            path_loss_exponent=self._env_profile.get_path_loss_exponent(),
+        )
+        
+        self._channel_gains_between_client_vehicle_and_edge_nodes = obtain_channel_gains_between_vehicles_and_edge_nodes(
+            distance_matrix=self._distance_matrix_between_client_vehicles_and_edge_nodes,
+            client_vehicles=self._client_vehicles,
+            edge_nodes=self._edge_nodes,
+            path_loss_exponent=self._env_profile.get_path_loss_exponent(),
         )
         return None
     

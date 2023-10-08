@@ -1,3 +1,4 @@
+from typing import List
 import numpy as np
 
 class action(object):
@@ -42,7 +43,7 @@ class action(object):
     def get_offloading_decision_of_client_vehicle(self, client_vehicle_index: int) -> int:
         for i in range(self._offloading_decision.shape[1]):
             if self._offloading_decision[client_vehicle_index][i] != 0:
-                return self._offloading_decision[client_vehicle_index][i]
+                return i
         raise Exception("No offloading decision of vehicle " + str(client_vehicle_index))
     
     def get_computing_resource_decision_of_client_vehicle(self, client_vehicle_index: int) -> float:
@@ -57,28 +58,41 @@ class action(object):
     def get_computing_resource_decision_at_local(self) -> np.ndarray:
         return self._computing_resource_decision[:][0]
     
-    def get_offloading_decision_at_server_vehicle(self, server_vehicle_index: int) -> np.ndarray:
+    def get_offloading_decision_at_server_vehicle(self, server_vehicle_index: int) -> List[int]:
         if server_vehicle_index > self._server_vehicle_number or server_vehicle_index < 0:
             raise Exception("Invalid server vehicle index")
-        return self._offloading_decision[:][server_vehicle_index]
+        client_vehicle_index_list = []
+        for i in range(self._client_vehicle_number):
+            if self._offloading_decision[i][server_vehicle_index] != 0:
+                client_vehicle_index_list.append(i)
+        return client_vehicle_index_list
     
     def get_computing_resource_decision_at_server_vehicle(self, server_vehicle_index: int) -> np.ndarray:
         if server_vehicle_index > self._server_vehicle_number or server_vehicle_index < 0:
             raise Exception("Invalid server vehicle index")
         return self._computing_resource_decision[:][server_vehicle_index]
     
-    def get_offloading_decision_at_edge_node(self, edge_node_index: int) -> np.ndarray:
-        if edge_node_index > (self._edge_node_number + self._server_vehicle_number)  or edge_node_index < self._server_vehicle_number + 1:
+    def get_offloading_decision_at_edge_node(self, edge_node_index: int) -> List[int]:
+        if edge_node_index > (self._edge_node_number + self._server_vehicle_number)  or \
+            edge_node_index < self._server_vehicle_number + 1:
             raise Exception("Invalid edge node index")
-        return self._offloading_decision[:][edge_node_index]
+        client_vehicle_index_list = []
+        for i in range(self._client_vehicle_number):
+            if self._offloading_decision[i][edge_node_index] != 0:
+                client_vehicle_index_list.append(i)
+        return client_vehicle_index_list
     
     def get_computing_resource_decision_at_edge_node(self, edge_node_index: int) -> np.ndarray:
         if edge_node_index > (self._edge_node_number + self._server_vehicle_number)  or edge_node_index < self._server_vehicle_number + 1:
             raise Exception("Invalid edge node index")
         return self._computing_resource_decision[:][edge_node_index]
     
-    def get_offloading_decision_at_cloud_node(self) -> np.ndarray:
-        return self._offloading_decision[:][-1]
+    def get_offloading_decision_at_cloud_node(self) -> List[int]:
+        client_vehicle_index_list = []
+        for i in range(self._client_vehicle_number):
+            if self._offloading_decision[i][-1] != 0:
+                client_vehicle_index_list.append(i)
+        return client_vehicle_index_list
     
     def get_computing_resource_decision_at_cloud_node(self) -> np.ndarray:
         return self._computing_resource_decision[:][-1]

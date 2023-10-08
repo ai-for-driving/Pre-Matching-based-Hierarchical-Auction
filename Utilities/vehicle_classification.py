@@ -1,10 +1,10 @@
-from typing import List
+from typing import List, Tuple
 from Objectives.vehicle import vehicle
 
 def get_client_and_server_vehicles(
     now: int,
     vehicles: List[vehicle],
-):
+) -> Tuple[List[vehicle], List[vehicle]]:
     client_vehicles = []
     server_vehicles = []
     for vehicle in vehicles:

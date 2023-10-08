@@ -1,10 +1,8 @@
 from typing import List
-import numpy as np
 import random
-from Objectives.mobility import mobility, calculate_distance 
-from Objectives.vehicle import vehicle
-
+from Objectives.mobility import mobility
 class edge_node(object):
+    
     def __init__(
         self,
         mobility: mobility,       
@@ -15,9 +13,9 @@ class edge_node(object):
     ) -> None:
         self._mobility: mobility = mobility 
         self._computing_capability: float = computing_capability
-        self._availiable_computing_capability: List[float] = [self._computing_capability for _ in range(time_slot_num)] 
+        self._available_computing_capability: List[float] = [self._computing_capability for _ in range(time_slot_num)] 
         self._storage_capability : float = storage_capability
-        self._availiable_storage_capability: List[float] = [self._storage_capability for _ in range(time_slot_num)]
+        self._available_storage_capability: List[float] = [self._storage_capability for _ in range(time_slot_num)]
         self._communication_range : float = communication_range
 
     def get_mobility(self) -> mobility:
@@ -32,20 +30,20 @@ class edge_node(object):
     def get_communication_range(self) -> float:
         return self._communication_range
     
-    def get_availiable_computing_capability(self, now: int) -> float:
-        return self._availiable_computing_capability[now]
+    def get_available_computing_capability(self, now: int) -> float:
+        return self._available_computing_capability[now]
     
-    def get_availiable_storage_capability(self, now: int) -> float:
-        return self._availiable_storage_capability[now]
+    def get_available_storage_capability(self, now: int) -> float:
+        return self._available_storage_capability[now]
 
     def set_consumed_computing_capability(self, consumed_computing_capability: float, now: int, duration: int) -> None:
         for i in range(now, now + duration):
-            self._availiable_computing_capability[i] = self._availiable_computing_capability[i] - consumed_computing_capability
+            self._available_computing_capability[i] = self._available_computing_capability[i] - consumed_computing_capability
         return None    
 
     def set_consumed_storage_capability(self, consumed_storage_capability: float, now: int, duration: int) -> None:
         for i in range(now, now + duration):
-            self._availiable_storage_capability[i] = self._availiable_storage_capability[i] - consumed_storage_capability
+            self._available_storage_capability[i] = self._available_storage_capability[i] - consumed_storage_capability
         return None
         
 def generate_edge_nodes(

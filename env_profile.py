@@ -38,6 +38,9 @@ class env_profile(object):
         min_I2C_wired_bandwidth: float,
         max_I2C_wired_bandwidth: float,
         cloud_distribution: str,
+        V2V_bandwidth: float,
+        V2I_bandwidth: float,
+        white_gaussian_noise: float,
     ) -> None:
         self._slot_length: int = slot_length
         self._task_num: int = task_num
@@ -76,7 +79,10 @@ class env_profile(object):
         self._min_I2C_wired_bandwidth: float = min_I2C_wired_bandwidth
         self._max_I2C_wired_bandwidth: float = max_I2C_wired_bandwidth
         self._cloud_distribution: str = cloud_distribution
-        
+        self._V2V_bandwidth: float = V2V_bandwidth
+        self._V2I_bandwidth: float = V2I_bandwidth
+        self._white_gaussian_noise: float = white_gaussian_noise
+        path_loss_exponent: int = 3
         
     def get_slot_length(self) -> int:
         return self._slot_length
@@ -189,3 +195,14 @@ class env_profile(object):
     def get_cloud_distribution(self) -> str:
         return self._cloud_distribution
     
+    def get_V2V_bandwidth(self) -> float:
+        return self._V2V_bandwidth
+    
+    def get_V2I_bandwidth(self) -> float:
+        return self._V2I_bandwidth
+    
+    def get_white_gaussian_noise(self) -> float:
+        return self._white_gaussian_noise
+    
+    def get_path_loss_exponent(self) -> int:
+        return self._path_loss_exponent

@@ -5,11 +5,11 @@ from mobility import mobility, get_vehicle_trajectories, calculate_distance
 
 class vehicle(object):
     '''
-    the vehicle is defined by its mobilities, computing capability, avaliable computing capability and transmission power
+    the vehicle is defined by its mobilities, computing capability, available computing capability and transmission power
     args:
         mobilities: a list of mobility
         computing_capability: computing capability
-        avaliable_computing_capability: avaliable computing capability
+        available_computing_capability: available computing capability
         transmission_power: transmission power
     '''
     def __init__(
@@ -27,8 +27,8 @@ class vehicle(object):
         self._computing_capability : float = computing_capability
         self._storage_capability : float = storage_capability
         self._time_slot_num : int = time_slot_num
-        self._avaliable_computing_capability : List[float] = [computing_capability for _ in range(time_slot_num)]
-        self._avaliable_storage_capability : List[float] = [storage_capability for _ in range(time_slot_num)]
+        self._available_computing_capability : List[float] = [computing_capability for _ in range(time_slot_num)]
+        self._available_storage_capability : List[float] = [storage_capability for _ in range(time_slot_num)]
         self._transmission_power : float = transmission_power
         self._communication_range : float = communication_range
         self._task_arrival_rate : float = task_arrival_rate
@@ -47,11 +47,11 @@ class vehicle(object):
     def get_storage_capability(self) -> float:
         return self._storage_capability
     
-    def get_avaliable_computing_capability(self, now: int) -> float:
-        return self._avaliable_computing_capability[now]
+    def get_available_computing_capability(self, now: int) -> float:
+        return self._available_computing_capability[now]
     
-    def get_availiable_storage_capability(self, now: int) -> float:
-        return self._avaliable_storage_capability[now]
+    def get_available_storage_capability(self, now: int) -> float:
+        return self._available_storage_capability[now]
     
     def get_transmission_power(self) -> float:
         return self._transmission_power
@@ -70,12 +70,12 @@ class vehicle(object):
     
     def set_consumed_computing_capability(self, consumed_computing_capability: float, now: int, duration: int) -> None:
         for i in range(now, now + duration):
-            self._avaliable_computing_capability[i] = self._avaliable_computing_capability[i] - consumed_computing_capability
+            self._available_computing_capability[i] = self._available_computing_capability[i] - consumed_computing_capability
         return None
     
     def set_consumed_storage_capability(self, consumed_storage_capability: float, now: int, duration: int) -> None:
         for i in range(now, now + duration):
-            self._avaliable_storage_capability[i] = self._avaliable_storage_capability[i] - consumed_storage_capability
+            self._available_storage_capability[i] = self._available_storage_capability[i] - consumed_storage_capability
         return None
     
     def generate_task(self) -> List[Tuple]:
@@ -95,8 +95,8 @@ class vehicle(object):
             + "\ndirection: " + self.get_mobilities(now).get_direction() \
             + "\ncomputing_capability: " + self.get_computing_capability() \
             + "\nstorage_capability: " + self.get_storage_capability() \
-            + "\navaliable_computing_capability: " + self.get_avaliable_computing_capability(now) \
-            + "\navaliable_storage_capability: " + self.get_availiable_storage_capability(now) \
+            + "\navailable_computing_capability: " + self.get_available_computing_capability(now) \
+            + "\navailable_storage_capability: " + self.get_available_storage_capability(now) \
             + "\ntransmission_power: " + self.get_transmission_power() \
             + "\ncommunication_range: " + self.get_communication_range() \
             + "\ntask_arrival_rate: " + self.get_task_arrival_rate()

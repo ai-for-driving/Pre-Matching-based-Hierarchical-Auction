@@ -33,12 +33,13 @@ def obtain_channel_gains_between_vehicles_and_edge_nodes(
     client_vehicles: List[vehicle],
     edge_nodes: List[edge_node],
     distance_matrix: np.ndarray,
+    path_loss_exponent: int,
 ) -> np.ndarray:
     channel_gains = np.zeros((len(client_vehicles), len(edge_nodes)))
     for i in range(len(client_vehicles)):
         for j in range(len(edge_nodes)):
             distance = distance_matrix[i][j]
             fading = generate_rayleigh_distributed_small_scale_fading()
-            channel_gain = compute_channel_gain(fading, distance, 3)
+            channel_gain = compute_channel_gain(fading, distance, path_loss_exponent)
             channel_gains[i][j] = channel_gain
     return channel_gains
