@@ -5,6 +5,8 @@ from Objectives.vehicle import vehicle
 from Objectives.edge_node import edge_node
 
 def calculate_distance(mobility1: mobility, mobility2: mobility) -> float:
+    if mobility1.get_time() != mobility2.get_time():
+        raise ValueError("The time of two mobilities are not the same.")
     return ((mobility1.get_x() - mobility2.get_x()) ** 2 + (mobility1.get_y() - mobility2.get_y()) ** 2) ** 0.5
 
 def get_distance_matrix_between_client_vehicles_and_server_vehicles(

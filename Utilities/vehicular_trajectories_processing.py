@@ -1,32 +1,38 @@
-from typing import List
+import sys
+sys.path.append(r"/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/")
+from Objectives.mobility import mobility
+from Utilities.time_calculation import transform_str_data_time_into_timestamp_ms
+from typing import List, Optional, Tuple
 import pandas as pd
 import matplotlib.pyplot as plt
 import random
-from Objectives.mobility import mobility
+
 
 class TrajectoriesProcessing(object):
     
     def __init__(
         self,
-        file_name_key : str,
-        vehicle_number : int,  # 定义车辆数目
-        slection_way : str,  # 定义车辆选择方式, 'random', 'max_duration', 'first'
-        filling_way : str = 'linear',  # 定义缺失值填充方式
-        chunk_size: int = 100000,   # 定义每块的大小（根据实际情况进行调整）
+        file_name_key : Optional[str] = "",
+        vehicle_number : Optional[int] = 10,  # 定义车辆数目
+        start_time : Optional[str] = "2005-04-13 16:00:00",  # 定义开始时间
+        slot_length : Optional[int] = 300,
+        slection_way : Optional[str] = "random",  # 定义车辆选择方式, 'random', 'max_duration', 'first'
+        filling_way : Optional[str] = 'linear',  # 定义缺失值填充方式
+        chunk_size: Optional[int] = 100000,   # 定义每块的大小（根据实际情况进行调整）
     ) -> None:
         self._file_names : dict = {}
         # I-80-Emeryville-CA-1650feet
-        self._file_names['I-80-Emeryville-CA-1650feet-0400pm-0415pm'] = 'Trajectories_files/I-80-Emeryville-CA-1650feet/i-80-vehicle-trajectory-data/vehicle-trajectory-data/0400pm-0415pm/trajectories-0400-0415.csv'
-        self._file_names['I-80-Emeryville-CA-1650feet-0500pm-0515pm'] = 'Trajectories_files/I-80-Emeryville-CA-1650feet/i-80-vehicle-trajectory-data/vehicle-trajectory-data/0500pm-0515pm/trajectories-0500-0515.csv'
-        self._file_names['I-80-Emeryville-CA-1650feet-0515pm-0530pm'] = 'Trajectories_files/I-80-Emeryville-CA-1650feet/i-80-vehicle-trajectory-data/vehicle-trajectory-data/0515pm-0530pm/trajectories-0515-0530.csv'
+        self._file_names['I-80-Emeryville-CA-1650feet-0400pm-0415pm'] = '/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/Trajectories_files/I-80-Emeryville-CA-1650feet/i-80-vehicle-trajectory-data/vehicle-trajectory-data/0400pm-0415pm/trajectories-0400-0415.csv'
+        self._file_names['I-80-Emeryville-CA-1650feet-0500pm-0515pm'] = '/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/Trajectories_files/I-80-Emeryville-CA-1650feet/i-80-vehicle-trajectory-data/vehicle-trajectory-data/0500pm-0515pm/trajectories-0500-0515.csv'
+        self._file_names['I-80-Emeryville-CA-1650feet-0515pm-0530pm'] = '/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/Trajectories_files/I-80-Emeryville-CA-1650feet/i-80-vehicle-trajectory-data/vehicle-trajectory-data/0515pm-0530pm/trajectories-0515-0530.csv'
         # Lankershim-Boulevard-LosAngeles-CA-1600feet
-        self._file_names['Lankershim-Boulevard-LosAngeles-CA-1600feet'] = 'Trajectories_files/Lankershim-Boulevard-LosAngeles-CA-1600feet/NGSIM__Lankershim_Vehicle_Trajectories.csv'
+        self._file_names['Lankershim-Boulevard-LosAngeles-CA-1600feet'] = '/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/Trajectories_files/Lankershim-Boulevard-LosAngeles-CA-1600feet/NGSIM__Lankershim_Vehicle_Trajectories.csv'
         # Peachtree-Street-Atlanta-GA-2100feet
-        self._file_names['Peachtree-Street-Atlanta-GA-2100feet'] = 'Trajectories_files/Peachtree-Street-Atlanta-GA-2100feet/NGSIM_Peachtree_Vehicle_Trajectories.csv'
+        self._file_names['Peachtree-Street-Atlanta-GA-2100feet'] = '/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/Trajectories_files/Peachtree-Street-Atlanta-GA-2100feet/NGSIM_Peachtree_Vehicle_Trajectories.csv'
         # US-101-SanDiego-CA-1500feet
-        self._file_names['US-101-SanDiego-CA-1500feet-0750am-0805am'] = 'Trajectories_files/US-101-LosAngeles-CA-2100feet/us-101-vehicle-trajectory-data/vehicle-trajectory-data/0750am-0805am/trajectories-0750am-0805am.csv'
-        self._file_names['US-101-SanDiego-CA-1500feet-0805am-0820am'] = 'Trajectories_files/US-101-LosAngeles-CA-2100feet/us-101-vehicle-trajectory-data/vehicle-trajectory-data/0805am-0820am/trajectories-0805am-0820am.csv'
-        self._file_names['US-101-SanDiego-CA-1500feet-0820am-0835am'] = 'Trajectories_files/US-101-LosAngeles-CA-2100feet/us-101-vehicle-trajectory-data/vehicle-trajectory-data/0820am-0835am/trajectories-0820am-0835am.csv'
+        self._file_names['US-101-SanDiego-CA-1500feet-0750am-0805am'] = '/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/Trajectories_files/US-101-LosAngeles-CA-2100feet/us-101-vehicle-trajectory-data/vehicle-trajectory-data/0750am-0805am/trajectories-0750am-0805am.csv'
+        self._file_names['US-101-SanDiego-CA-1500feet-0805am-0820am'] = '/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/Trajectories_files/US-101-LosAngeles-CA-2100feet/us-101-vehicle-trajectory-data/vehicle-trajectory-data/0805am-0820am/trajectories-0805am-0820am.csv'
+        self._file_names['US-101-SanDiego-CA-1500feet-0820am-0835am'] = '/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/Trajectories_files/US-101-LosAngeles-CA-2100feet/us-101-vehicle-trajectory-data/vehicle-trajectory-data/0820am-0835am/trajectories-0820am-0835am.csv'
         
         self._file_name_key : str = file_name_key
         self._chunk_size : int = chunk_size
@@ -46,6 +52,15 @@ class TrajectoriesProcessing(object):
         self._all_data = pd.DataFrame()
         self._min_global_time = 0
         
+        self._start_time : str = start_time
+        self._slot_time_length : int = slot_length
+        
+        self._start_time_timestamp_ms : int = 0
+        self._end_time_timestamp_ms : int = 0
+        
+    def get_max_and_min_global_time(self) -> Tuple[int, int]:
+        return self._all_data['Global_Time'].max(), self._all_data['Global_Time'].min()
+    
     def get_file_name_key(self) -> str:
         return self._file_name_key
     
@@ -72,6 +87,9 @@ class TrajectoriesProcessing(object):
     def get_selected_data(self) -> pd.DataFrame:
         return self._selected_data
     
+    def get_vehicle_mobilities(self) -> List[List[mobility]]:
+        return self._vehicle_mobilities
+    
     def set_file_name_key(self, file_name_key: str) -> None:
         self._file_name_key = file_name_key
         return None
@@ -87,6 +105,10 @@ class TrajectoriesProcessing(object):
     def set_filling_way(self, filling_way: str) -> None:
         self._filling_way = filling_way
         return None
+    
+    def obtain_start_end_time_stamp_ms(self) -> None:
+        self._start_time_timestamp_ms = transform_str_data_time_into_timestamp_ms(self._start_time)
+        self._end_time_timestamp_ms = self._start_time_timestamp_ms + self._slot_time_length * 1000
     
     """
     列名	         描述
@@ -120,26 +142,24 @@ class TrajectoriesProcessing(object):
         self, 
     ) -> None:
         try: 
+            self.obtain_start_end_time_stamp_ms()
             # 使用迭代器逐块读取CSV文件
             reader = pd.read_csv(self.get_file_name(), chunksize=self._chunk_size)
 
             # 遍历每块数据
             for chunk in reader:
-                # 按照Vehicle_ID进行分组
-                grouped = chunk.groupby('Vehicle_ID')
+                # 得到指定开始结束时间段内的数据
+                mask = (chunk['Global_Time'] >= self._start_time_timestamp_ms) & \
+                    (chunk['Global_Time'] <= self._end_time_timestamp_ms)
+                self._all_data = pd.concat([self._all_data, chunk[mask]])
 
-                # 遍历每个分组
-                for group in grouped:
-                    # 按照时间序列排序
-                    self._vehicle_IDs.append(group[0])
-                    sorted_group = group.sort_values('Global_Time')
-
-                    # 将该车辆的轨迹数据添加到总的数据中
-                    self._all_data = pd.concat([self._all_data, sorted_group])
             self._min_global_time = self._all_data['Global_Time'].min()
         except:
             raise ValueError('file_name not found')
-        
+    
+    def get_all_data(self):
+        return self._all_data
+    
     def select_vehicles(
         self,
     ) -> None:
@@ -183,7 +203,7 @@ class TrajectoriesProcessing(object):
         
     def fill_missing_values(
         self,
-    ) -> List[List[mobility]]:
+    ) -> None:
         
         groups = self._transfered_data.groupby('Vehicle_ID')
         for group in groups:
@@ -250,8 +270,13 @@ class TrajectoriesProcessing(object):
         else:
             raise ValueError('filling_way not found')
         
-        return self._vehicle_mobilities
+        return None
     
+    def processing(self):
+        self.read_csv()
+        self.select_vehicles()
+        self.transfer_into_local_coordinates()
+        self.fill_missing_values()
 
     def print_analysis(
         self,
@@ -283,3 +308,7 @@ class TrajectoriesProcessing(object):
 
         # 显示图形
         plt.show()
+        
+        
+if __name__ == '__main__':
+    pass

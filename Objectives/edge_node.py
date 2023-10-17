@@ -1,5 +1,4 @@
 from typing import List
-import random
 from Objectives.mobility import mobility
 class edge_node(object):
     
@@ -46,46 +45,3 @@ class edge_node(object):
             self._available_storage_capability[i] = self._available_storage_capability[i] - consumed_storage_capability
         return None
         
-def generate_edge_nodes(
-    edge_num: int,
-    file_name: str,
-    min_computing_capability: float,
-    max_computing_capability: float,
-    min_storage_capability: float,
-    max_storage_capability: float,
-    communication_range : float,
-    distribution: str,
-) -> List(edge_node):
-    edge_nodes = []
-    edge_node_x = []
-    edge_node_y = []
-    try:
-        with open(file_name, 'r') as f:
-            for line in f.readlines():
-                line = line.strip('\n')
-                line = line.split(',')
-                edge_node_x.append(float(line[0]))
-                edge_node_y.append(float(line[1]))
-    except:
-        raise Exception("No such file: " + file_name)
-    if distribution == "uniform" :
-        for _ in range(edge_num):
-            mobility_obj = mobility(edge_node_x[_], edge_node_y[_], 0, 0)
-            computing_capability = random.uniform(min_computing_capability,max_computing_capability)
-            storage_capability = random.uniform(min_storage_capability,max_storage_capability)
-            edge_node_obj = edge_node(mobility_obj, computing_capability, storage_capability, communication_range)
-            edge_nodes.append(edge_node_obj)
-        return edge_nodes 
-    else:
-        raise Exception("distribution is not supported")
-        
-
-def generate_edge_nodes_test():
-    pass
-
-def get_vehicles_under_coverage_of_edge_nodes_test():
-    pass
-
-if __name__ == '__main__':
-    generate_edge_nodes_test()
-    get_vehicles_under_coverage_of_edge_nodes_test()
