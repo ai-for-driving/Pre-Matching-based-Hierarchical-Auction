@@ -82,7 +82,7 @@ class env_profile(object):
         self._V2V_bandwidth: float = V2V_bandwidth
         self._V2I_bandwidth: float = V2I_bandwidth
         self._white_gaussian_noise: float = white_gaussian_noise
-        path_loss_exponent: int = 3
+        self._path_loss_exponent: int = 3
         
     def get_slot_length(self) -> int:
         return self._slot_length

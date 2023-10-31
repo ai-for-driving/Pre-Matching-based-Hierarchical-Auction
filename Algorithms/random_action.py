@@ -1,5 +1,5 @@
 import numpy as np
-from strategy import action
+from Strategy.strategy import action
 
 def random_action(
     client_vehicle_number : int,
@@ -23,3 +23,5 @@ def random_action(
     if not action_obj.check_validity():
         raise Exception("Invalid action")
     return action_obj
+
+

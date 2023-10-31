@@ -1,6 +1,6 @@
 from Utilities.noma import obtain_channel_gains_between_client_vehicle_and_server_vehicles, obtain_channel_gains_between_vehicles_and_edge_nodes
 from Utilities.wired_bandwidth import get_wired_bandwidth_between_edge_node_and_other_edge_nodes
-from env_profile import env_profile
+from Environment.env_profile import env_profile
 from Objectives.task import task, generate_task_set
 from Objectives.vehicle import vehicle, generate_vehicles
 from Objectives.edge_node import edge_node, generate_edge_nodes
@@ -12,7 +12,7 @@ from typing import List, Tuple
 import numpy as np
 import time
 import pickle
-from strategy import action
+from Strategy.strategy import action
 from Utilities.time_calculation import obtain_computing_time, obtain_transmission_time, obtain_wired_transmission_time
 from Utilities.time_calculation import compute_transmission_rate, compute_V2V_SINR, compute_V2I_SINR
 
