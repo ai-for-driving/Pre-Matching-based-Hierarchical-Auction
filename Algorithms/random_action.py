@@ -1,7 +1,7 @@
 import numpy as np
 from Strategy.strategy import action
 
-def random_action(
+def generate_random_action(
     client_vehicle_number : int,
     server_vehicle_number : int,
     edge_node_number : int,

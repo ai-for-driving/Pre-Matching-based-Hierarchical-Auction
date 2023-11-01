@@ -1,7 +1,7 @@
 import sys
 sys.path.append(r"/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/")
 from Objectives.mobility import mobility
-from Utilities.time_calculation import transform_str_data_time_into_timestamp_ms
+from Utilities.time_calculation import transform_str_data_time_into_timestamp_ms, transform_str_data_time_into_timestamp
 from typing import List, Optional, Tuple
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -35,6 +35,14 @@ class TrajectoriesProcessing(object):
         self._file_names['US-101-SanDiego-CA-1500feet-0820am-0835am'] = '/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/Trajectories_files/US-101-LosAngeles-CA-2100feet/us-101-vehicle-trajectory-data/vehicle-trajectory-data/0820am-0835am/trajectories-0820am-0835am.csv'
         
         self._file_name_key : str = file_name_key
+        self._is_ms : bool = True
+        
+        if self._file_name_key not in self._file_names:
+            raise ValueError('file_name_key not found')
+        else:
+            if self._file_name_key == 'Peachtree-Street-Atlanta-GA-2100feet':
+                self._is_ms = False
+        
         self._chunk_size : int = chunk_size
         
         self._vehicle_number : int = vehicle_number
@@ -107,8 +115,12 @@ class TrajectoriesProcessing(object):
         return None
     
     def obtain_start_end_time_stamp_ms(self) -> None:
-        self._start_time_timestamp_ms = transform_str_data_time_into_timestamp_ms(self._start_time)
-        self._end_time_timestamp_ms = self._start_time_timestamp_ms + self._slot_time_length * 1000
+        if self._is_ms:
+            self._start_time_timestamp_ms = transform_str_data_time_into_timestamp_ms(self._start_time)
+            self._end_time_timestamp_ms = self._start_time_timestamp_ms + self._slot_time_length * 1000
+        else:
+            self._start_time_timestamp_ms = transform_str_data_time_into_timestamp(self._start_time)
+            self._end_time_timestamp_ms = self._start_time_timestamp_ms + self._slot_time_length
     
     """
     列名	         描述
@@ -156,6 +168,7 @@ class TrajectoriesProcessing(object):
             self._min_global_time = self._all_data['Global_Time'].min()
         except:
             raise ValueError('file_name not found')
+        
     
     def get_all_data(self):
         return self._all_data
@@ -204,7 +217,6 @@ class TrajectoriesProcessing(object):
     def fill_missing_values(
         self,
     ) -> None:
-        
         groups = self._transfered_data.groupby('Vehicle_ID')
         for group in groups:
             vehicle_mobility = []
@@ -216,8 +228,19 @@ class TrajectoriesProcessing(object):
                 v_vel = group[1]['v_Vel'].values[i]
                 v_acc = group[1]['v_Acc'].values[i]
                 direction = group[1]['Direction'].values[i]
-                if global_time % 1000 == 0:
+                if self._is_ms and global_time % 1000 == 0:
                     global_time = int(global_time / 1000)
+                    vehicle_mobility.append(
+                        mobility(
+                            x=local_x,
+                            y=local_y,
+                            speed=v_vel,
+                            acceleration=v_acc,
+                            direction=direction,
+                            time=global_time,
+                        )
+                    )
+                elif not self._is_ms:
                     vehicle_mobility.append(
                         mobility(
                             x=local_x,
@@ -249,13 +272,13 @@ class TrajectoriesProcessing(object):
                             direction = self._vehicle_mobilities[vehicle_index][mobility_index].get_direction()
                             for i in range(time_difference):
                                 # 
-                                local_x = self._vehicle_mobilities[vehicle_index][mobility_index].get_x + \
+                                local_x = self._vehicle_mobilities[vehicle_index][mobility_index].get_x() + \
                                     local_x_difference / time_difference * (i + 1)
-                                local_y = self._vehicle_mobilities[vehicle_index][mobility_index].get_y + \
+                                local_y = self._vehicle_mobilities[vehicle_index][mobility_index].get_y() + \
                                     local_y_difference / time_difference * (i + 1)
-                                speed = self._vehicle_mobilities[vehicle_index][mobility_index].get_speed + \
+                                speed = self._vehicle_mobilities[vehicle_index][mobility_index].get_speed() + \
                                     speed_difference / time_difference * (i + 1)
-                                acceleration = self._vehicle_mobilities[vehicle_index][mobility_index].get_acceleration + \
+                                acceleration = self._vehicle_mobilities[vehicle_index][mobility_index].get_acceleration() + \
                                     acceleration_difference / time_difference * (i + 1)
                                 self._vehicle_mobilities[vehicle_index].insert(mobility_index + 1, \
                                     mobility(
@@ -264,7 +287,7 @@ class TrajectoriesProcessing(object):
                                         speed=speed,
                                         acceleration=acceleration,
                                         direction=direction,
-                                        time=self._vehicle_mobilities[vehicle_index][mobility_index].get_time + i + 1,
+                                        time=self._vehicle_mobilities[vehicle_index][mobility_index].get_time() + i + 1,
                                     )
                                 )
         else:
@@ -309,6 +332,4 @@ class TrajectoriesProcessing(object):
         # 显示图形
         plt.show()
         
-        
-if __name__ == '__main__':
-    pass
+        return None

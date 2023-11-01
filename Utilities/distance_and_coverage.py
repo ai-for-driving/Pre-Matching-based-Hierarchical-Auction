@@ -4,10 +4,19 @@ from Objectives.mobility import mobility
 from Objectives.vehicle import vehicle
 from Objectives.edge_node import edge_node
 
-def calculate_distance(mobility1: mobility, mobility2: mobility) -> float:
-    if mobility1.get_time() != mobility2.get_time():
-        raise ValueError("The time of two mobilities are not the same.")
-    return ((mobility1.get_x() - mobility2.get_x()) ** 2 + (mobility1.get_y() - mobility2.get_y()) ** 2) ** 0.5
+def calculate_distance(
+    mobility1: mobility, 
+    mobility2: mobility,
+    type: str,
+) -> float:
+    if type == "vehicles":
+        if mobility1.get_time() != mobility2.get_time():
+            raise ValueError("The time of two mobilities are not the same.")
+        return ((mobility1.get_x() - mobility2.get_x()) ** 2 + (mobility1.get_y() - mobility2.get_y()) ** 2) ** 0.5
+    elif type == "edge_nodes":
+        return ((mobility1.get_x() - mobility2.get_x()) ** 2 + (mobility1.get_y() - mobility2.get_y()) ** 2) ** 0.5
+    else:
+        raise Exception("type not supported")
 
 def get_distance_matrix_between_client_vehicles_and_server_vehicles(
     client_vehicles: List[vehicle],
@@ -22,7 +31,8 @@ def get_distance_matrix_between_client_vehicles_and_server_vehicles(
             if i != j:
                 distance_matrix[i][j] = calculate_distance(
                     client_vehicles[i].get_mobility(now), 
-                    server_vehicles[j].get_mobility(now)
+                    server_vehicles[j].get_mobility(now),
+                    type="vehicles"
                 )
     return distance_matrix
 
@@ -50,7 +60,11 @@ def get_distance_matrix_between_vehicles_and_edge_nodes(
     distance_matrix = np.zeros((vehicle_num, edge_node_num))
     for i in range(vehicle_num):
         for j in range(edge_node_num):
-            distance_matrix[i][j] = calculate_distance(client_vehicles[i].get_mobility(now), edge_nodes[j].get_mobility(now))
+            distance_matrix[i][j] = calculate_distance(
+                client_vehicles[i].get_mobility(now = now), 
+                edge_nodes[j].get_mobility(),
+                type="edge_nodes"
+            )
     return distance_matrix
 
 def get_vehicles_under_V2I_communication_range(
@@ -65,12 +79,26 @@ def get_vehicles_under_V2I_communication_range(
         for j in range(num_edge_nodes):
             distance = calculate_distance(
                 client_vehicles[i].get_mobility(now), 
-                edge_nodes[j].get_mobility(now)
+                edge_nodes[j].get_mobility(),
+                type="edge_nodes"
             )
             if(distance <= edge_nodes[j].get_communication_range()):
                 result[i][j] = 1
     return result
 
+def get_distance_matrix_between_edge_nodes(
+    edge_nodes: List[edge_node],
+) -> np.ndarray:
+    num_edge_nodes = len(edge_nodes)
+    distance_matrix = np.zeros((num_edge_nodes, num_edge_nodes))
+    for i in range(num_edge_nodes):
+        for j in range(num_edge_nodes):
+            distance_matrix[i][j] = calculate_distance(
+                edge_nodes[i].get_mobility(), 
+                edge_nodes[j].get_mobility(),
+                type="edge_nodes"
+            )
+    return distance_matrix
 
 
 

@@ -39,6 +39,8 @@ class vehicle(object):
         return self._mobilities
     
     def get_mobility(self, now: int) -> mobility:
+        if now >= self._time_slot_num:
+            raise ValueError("The time is out of range.")
         return self._mobilities[now]
     
     def get_computing_capability(self) -> float:

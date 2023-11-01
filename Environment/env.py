@@ -1,12 +1,13 @@
 from Utilities.noma import obtain_channel_gains_between_client_vehicle_and_server_vehicles, obtain_channel_gains_between_vehicles_and_edge_nodes
 from Utilities.wired_bandwidth import get_wired_bandwidth_between_edge_node_and_other_edge_nodes
 from Environment.env_profile import env_profile
-from Objectives.task import task, generate_task_set
-from Objectives.vehicle import vehicle, generate_vehicles
-from Objectives.edge_node import edge_node, generate_edge_nodes
-from Objectives.cloud_server import cloud_server, generate_cloud
+from Objectives.task import task
+from Objectives.vehicle import vehicle
+from Objectives.edge_node import edge_node
+from Objectives.cloud_server import cloud_server
+from Utilities.objective_generation import generate_task_set, generate_vehicles, generate_edge_nodes, generate_cloud
 from Utilities.vehicle_classification import get_client_and_server_vehicles
-from Utilities.distance_and_coverage import get_distance_matrix_between_client_vehicles_and_server_vehicles, get_distance_matrix_between_vehicles_and_edge_nodes    
+from Utilities.distance_and_coverage import get_distance_matrix_between_client_vehicles_and_server_vehicles, get_distance_matrix_between_vehicles_and_edge_nodes, get_distance_matrix_between_edge_nodes  
 from Utilities.distance_and_coverage import get_vehicles_under_V2I_communication_range, get_vehicles_under_V2V_communication_range
 from typing import List, Tuple
 import numpy as np
@@ -24,7 +25,7 @@ class env(object):
     ) -> None:
         self._env_profile = profile
         self._now = 0
-        self._end_time = profile.get_slot_length - 1
+        self._end_time = profile.get_slot_length() - 1
         self._task_num_at_time = [0 for _ in range(profile.get_slot_length())]
         self._average_processing_time_at_time = [0 for _ in range(profile.get_slot_length())]
         self._average_transmission_time_at_time = [0 for _ in range(profile.get_slot_length())]
@@ -56,7 +57,11 @@ class env(object):
         self._vehicles : List[vehicle] = generate_vehicles(
             vehicle_num=profile.get_vehicle_num(),
             slot_length=profile.get_slot_length(),
-            file_name=profile.get_vehicle_mobility_file_name(),
+            file_name_key=profile.get_vehicle_mobility_file_name_key(),
+            slection_way=profile.get_vehicular_trajectories_processing_selection_way(),
+            filling_way=profile.get_vehicular_trajectories_processing_filling_way(),
+            chunk_size=profile.get_vehicular_trajectories_processing_chunk_size(),
+            start_time=profile.get_vehicular_trajectories_processing_start_time(),
             min_computing_capability=profile.get_min_computing_capability_of_vehicles(),
             max_computing_capability=profile.get_max_computing_capability_of_vehicles(),
             min_storage_capability=profile.get_min_storage_capability_of_vehicles(),
@@ -71,6 +76,7 @@ class env(object):
         )
         
         self._edge_nodes : List[edge_node] = generate_edge_nodes(
+            edge_num=profile.get_edge_num(),
             file_name=profile.get_edge_mobility_file_name(),
             min_computing_capability=profile.get_min_computing_capability_of_edges(),
             max_computing_capability=profile.get_max_computing_capability_of_edges(),
@@ -78,17 +84,23 @@ class env(object):
             max_storage_capability=profile.get_max_storage_capability_of_edges(),
             communication_range=profile.get_V2V_distance(),
             distribution=profile.get_edge_distribution(),
+            time_slot_num=profile.get_slot_length(),
         )
         
+        self._distance_matrix_between_edge_nodes = get_distance_matrix_between_edge_nodes(
+            edge_nodes=self._edge_nodes,
+        )
         self._wired_bandwidths_between_edge_node_and_other_edge_nodes = get_wired_bandwidth_between_edge_node_and_other_edge_nodes(
             edge_nodes=self._edge_nodes,
             weight=profile.get_I2I_transmission_weight(),
             transmission_rate=profile.get_I2I_transmission_rate(),
+            distance_matrix=self._distance_matrix_between_edge_nodes,
         )
         
         self._cloud : cloud_server = generate_cloud(
             computing_capability=profile.get_cloud_computing_capability(),
             storage_capability=profile.get_cloud_storage_capability(),
+            edge_node_num=profile.get_edge_num(),
             time_slot_num=profile.get_slot_length(),
             min_wired_bandwidth=profile.get_min_I2C_wired_bandwidth(),
             max_wired_bandwidth=profile.get_max_I2C_wired_bandwidth(),

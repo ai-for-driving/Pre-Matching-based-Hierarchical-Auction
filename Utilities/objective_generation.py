@@ -60,6 +60,8 @@ def generate_vehicles(
     slot_length: int,
     file_name_key: str,
     slection_way: str,
+    filling_way: str,
+    chunk_size: int,
     start_time: str,
     min_computing_capability: float,
     max_computing_capability: float,
@@ -73,12 +75,15 @@ def generate_vehicles(
     task_num: int,
     distribution: str,
 ) -> List[vehicle]:
+
     trajectoriesProcessing = TrajectoriesProcessing(
         file_name_key=file_name_key,
         vehicle_number=vehicle_num,
         start_time=start_time,
         slot_length=slot_length,
         slection_way=slection_way,
+        filling_way=filling_way,
+        chunk_size=chunk_size,
     )
     trajectoriesProcessing.processing()
     
@@ -111,8 +116,9 @@ def generate_edge_nodes(
     min_storage_capability: float,
     max_storage_capability: float,
     communication_range : float,
+    time_slot_num: int,
     distribution: str,
-) -> List(edge_node):
+) -> List[edge_node]:
     edge_nodes = []
     edge_node_x = []
     edge_node_y = []
@@ -127,10 +133,22 @@ def generate_edge_nodes(
         raise Exception("No such file: " + file_name)
     if distribution == "uniform" :
         for _ in range(edge_num):
-            mobility_obj = mobility(edge_node_x[_], edge_node_y[_], 0, 0)
+            mobility_obj = mobility(
+                x = edge_node_x[_], 
+                y = edge_node_y[_], 
+                speed = 0, 
+                acceleration = 0,
+                direction = 0,
+                time = 0
+            )
             computing_capability = random.uniform(min_computing_capability,max_computing_capability)
             storage_capability = random.uniform(min_storage_capability,max_storage_capability)
-            edge_node_obj = edge_node(mobility_obj, computing_capability, storage_capability, communication_range)
+            edge_node_obj = edge_node(
+                mobility = mobility_obj, 
+                computing_capability = computing_capability, 
+                storage_capability = storage_capability,
+                communication_range = communication_range,
+                time_slot_num = time_slot_num)
             edge_nodes.append(edge_node_obj)
         return edge_nodes 
     else:

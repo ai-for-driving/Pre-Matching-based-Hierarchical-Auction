@@ -11,7 +11,6 @@ def compute_V2I_SINR(
     return (1.0 / (cover_dBm_to_W(white_gaussian_noise) + intra_edge_interference + inter_edge_interference)) * \
         (np.abs(channel_gain) ** 2) * cover_mW_to_W(transmission_power)
 
-
 def compute_V2V_SINR(
     white_gaussian_noise: int,
     channel_gain: float,
