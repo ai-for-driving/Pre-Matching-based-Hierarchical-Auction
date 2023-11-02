@@ -88,6 +88,7 @@ def generate_vehicles(
     trajectoriesProcessing.processing()
     
     mobilities_list : List[List[mobility]] = trajectoriesProcessing.get_vehicle_mobilities()
+    
     vehicles = []
     if distribution == "uniform":
         for _ in range(vehicle_num):

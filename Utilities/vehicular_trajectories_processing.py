@@ -221,7 +221,8 @@ class TrajectoriesProcessing(object):
         for group in groups:
             vehicle_mobility = []
             global_times = group[1]['Global_Time'].values
-            for i in range(1, len(global_times)):
+            # print("global_time", global_times)
+            for i in range(len(global_times)):
                 global_time = global_times[i]
                 local_x = group[1]['Local_X'].values[i]
                 local_y = group[1]['Local_Y'].values[i]
@@ -255,41 +256,45 @@ class TrajectoriesProcessing(object):
             
         if self._filling_way == 'linear':
             for vehicle_index in range(len(self._vehicle_mobilities)):
-                for mobility_index in range(len(self._vehicle_mobilities[vehicle_index])):
-                    if mobility_index != len(self._vehicle_mobilities[vehicle_index]) - 1:
-                        if self._vehicle_mobilities[vehicle_index][mobility_index].get_time() \
-                            != self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_time() - 1:
-                            time_difference = self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_time() - \
-                                self._vehicle_mobilities[vehicle_index][mobility_index].get_time() - 1
-                            local_x_difference = self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_x() - \
-                                self._vehicle_mobilities[vehicle_index][mobility_index].get_x()
-                            local_y_difference = self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_y() - \
-                                self._vehicle_mobilities[vehicle_index][mobility_index].get_y()
-                            speed_difference = self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_speed() - \
-                                self._vehicle_mobilities[vehicle_index][mobility_index].get_speed()
-                            acceleration_difference = self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_acceleration() - \
-                                self._vehicle_mobilities[vehicle_index][mobility_index].get_acceleration()
-                            direction = self._vehicle_mobilities[vehicle_index][mobility_index].get_direction()
-                            for i in range(time_difference):
-                                # 
-                                local_x = self._vehicle_mobilities[vehicle_index][mobility_index].get_x() + \
-                                    local_x_difference / time_difference * (i + 1)
-                                local_y = self._vehicle_mobilities[vehicle_index][mobility_index].get_y() + \
-                                    local_y_difference / time_difference * (i + 1)
-                                speed = self._vehicle_mobilities[vehicle_index][mobility_index].get_speed() + \
-                                    speed_difference / time_difference * (i + 1)
-                                acceleration = self._vehicle_mobilities[vehicle_index][mobility_index].get_acceleration() + \
-                                    acceleration_difference / time_difference * (i + 1)
-                                self._vehicle_mobilities[vehicle_index].insert(mobility_index + 1, \
-                                    mobility(
-                                        x=local_x,
-                                        y=local_y,
-                                        speed=speed,
-                                        acceleration=acceleration,
-                                        direction=direction,
-                                        time=self._vehicle_mobilities[vehicle_index][mobility_index].get_time() + i + 1,
-                                    )
+                mobility_index = 0
+                while mobility_index != self._slot_time_length:
+                    # print("\nmobility_index", mobility_index)
+                    # print("\nlen(self._vehicle_mobilities[vehicle_index]", len(self._vehicle_mobilities[vehicle_index]))
+                    if self._vehicle_mobilities[vehicle_index][mobility_index].get_time() \
+                        != self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_time() - 1:
+                        time_difference = self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_time() - \
+                            self._vehicle_mobilities[vehicle_index][mobility_index].get_time() - 1
+                        local_x_difference = self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_x() - \
+                            self._vehicle_mobilities[vehicle_index][mobility_index].get_x()
+                        local_y_difference = self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_y() - \
+                            self._vehicle_mobilities[vehicle_index][mobility_index].get_y()
+                        speed_difference = self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_speed() - \
+                            self._vehicle_mobilities[vehicle_index][mobility_index].get_speed()
+                        acceleration_difference = self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_acceleration() - \
+                            self._vehicle_mobilities[vehicle_index][mobility_index].get_acceleration()
+                        direction = self._vehicle_mobilities[vehicle_index][mobility_index].get_direction()
+                        for i in range(time_difference):
+                            # 
+                            local_x = self._vehicle_mobilities[vehicle_index][mobility_index].get_x() + \
+                                local_x_difference / time_difference * (i + 1)
+                            local_y = self._vehicle_mobilities[vehicle_index][mobility_index].get_y() + \
+                                local_y_difference / time_difference * (i + 1)
+                            speed = self._vehicle_mobilities[vehicle_index][mobility_index].get_speed() + \
+                                speed_difference / time_difference * (i + 1)
+                            acceleration = self._vehicle_mobilities[vehicle_index][mobility_index].get_acceleration() + \
+                                acceleration_difference / time_difference * (i + 1)
+                            self._vehicle_mobilities[vehicle_index].insert(mobility_index + 1 + i, \
+                                mobility(
+                                    x=local_x,
+                                    y=local_y,
+                                    speed=speed,
+                                    acceleration=acceleration,
+                                    direction=direction,
+                                    time=self._vehicle_mobilities[vehicle_index][mobility_index].get_time() + i + 1,
                                 )
+                            )
+                        mobility_index = mobility_index + time_difference + 1
+                    
         else:
             raise ValueError('filling_way not found')
         

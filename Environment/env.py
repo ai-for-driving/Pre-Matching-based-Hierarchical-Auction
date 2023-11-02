@@ -40,7 +40,8 @@ class env(object):
         self._task_processed_at_cloud_at_time = [0 for _ in range(profile.get_slot_length())]
         self._task_successfully_processed_num_at_time = [0 for _ in range(profile.get_slot_length())]
         
-        self._resutls_file_name = "results/" \
+        
+        self._resutls_file_name = "/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/Results/" \
             + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + ".txt"
         
         self._tasks : List[task] = generate_task_set(
@@ -155,27 +156,34 @@ class env(object):
         
         return None
     
+    def get_client_vehicle_num(self) -> int:
+        return self._client_vehicle_num
+    
+    def get_server_vehicle_num(self) -> int:
+        return self._server_vehicle_num
+    
     def step(self, now_action : action) -> None:
         if self._now > self._end_time:
             self.save_results()
         else:
             
-            client_vehicle_available_computing_capability = [client_vehicle.get_available_computing_capability() for client_vehicle in self._client_vehicles]
-            server_vehicle_available_computing_capability = [server_vehicle.get_available_computing_capability() for server_vehicle in self._server_vehicles]
-            edge_node_available_computing_capability = [edge_node.get_available_computing_capability() for edge_node in self._edge_nodes]
-            cloud_available_computing_capability = self._cloud.get_available_computing_capability()
+            client_vehicle_available_computing_capability = [client_vehicle.get_available_computing_capability(self._now) for client_vehicle in self._client_vehicles]
+            server_vehicle_available_computing_capability = [server_vehicle.get_available_computing_capability(self._now) for server_vehicle in self._server_vehicles]
+            edge_node_available_computing_capability = [edge_node.get_available_computing_capability(self._now) for edge_node in self._edge_nodes]
+            cloud_available_computing_capability = self._cloud.get_available_computing_capability(self._now)
             
             if now_action.check_validity():
                 
                 for client_vehicle_index in range(self._client_vehicle_num):
                     client_vehicle : vehicle = self._client_vehicles[client_vehicle_index]
                     tasks : List[Tuple] = client_vehicle.get_tasks_by_time(self._now)
-                    task_offloading_decision = now_action.get_offloading_decision_of_client_vehicle()
-                    computing_resource_decision = now_action.get_computing_resource_decision_of_client_vehicle(client_vehicle)
+                    task_offloading_decision = now_action.get_offloading_decision_of_client_vehicle(client_vehicle_index=client_vehicle_index)
+                    computing_resource_decision = now_action.get_computing_resource_decision_of_client_vehicle(client_vehicle_index=client_vehicle_index)
                     for task_tuple in tasks:
+                        
                         self._task_num_at_time[self._now] += 1
                         
-                        task_object : task = task_tuple[1]
+                        task_object : task = self._tasks[task_tuple[1]]
                         task_data_size = task_object.get_input_data_size()
                         task_cycles = task_object.get_cqu_cycles()
                         task_deadline = task_object.get_deadline()
@@ -200,7 +208,7 @@ class env(object):
                             if task_processing_time <= task_deadline:
                                 self._task_successfully_processed_num_at_time[self._now] += 1
                             
-                            task_during_time = np.floor(task_computing_time)
+                            task_during_time = np.floor(task_computing_time).astype('int')
                             self._client_vehicles[client_vehicle_index].set_consumed_computing_capability(
                                 consumed_computing_capability=allocated_computing_capability,
                                 now=self._now,
@@ -238,7 +246,7 @@ class env(object):
                                     self._task_successfully_processed_num_at_time[self._now] += 1
                                 
                                 task_computing_start_time = self._now + np.ceil(task_transmission_time)
-                                task_during_time = np.floor(task_computing_time)
+                                task_during_time = np.floor(task_computing_time).astype('int')
                                 self._server_vehicles[server_vehicle_index] : vehicle .set_consumed_computing_capability(
                                     consumed_computing_capability=allocated_computing_capability,
                                     now=task_computing_start_time,
@@ -251,7 +259,13 @@ class env(object):
                                 )
                                 
                             else:
-                                raise Exception("V2V communication range error")
+                                pass
+                                # print("V2V communication range error")
+                                # print("\nclient_vehicle_index", client_vehicle_index)
+                                # print("\nserver_vehicle_index", server_vehicle_index)
+                                # print("\nself._vehicles_under_V2V_communication_range", self._vehicles_under_V2V_communication_range)
+                                # print("\nself._vehicles_under_V2V_communication_range[client_vehicle_index][server_vehicle_index]", self._vehicles_under_V2V_communication_range[client_vehicle_index][server_vehicle_index])
+                                # raise Exception("V2V communication range error")
                         elif task_offloading_decision >= self._server_vehicle_num + 1 and \
                             task_offloading_decision <= self._server_vehicle_num + self._env_profile.get_edge_num():  # processing at edge
                             self._task_processed_at_edge_at_time[self._now] += 1
@@ -351,7 +365,7 @@ class env(object):
                             task_i2c_transmission_time = 0
                             
                             for edge_node_index in range(self._env_profile.get_edge_num()):
-                                if self._vehicles_under_V2I_communication_range[client_vehicle_index][other_edge_node_index] == 1:
+                                if self._vehicles_under_V2I_communication_range[client_vehicle_index][edge_node_index] == 1:
                                     task_v2i_transmission_time = self.obtain_V2I_transmission_time(
                                         now_action=now_action,
                                         client_vehicle_index=client_vehicle_index,

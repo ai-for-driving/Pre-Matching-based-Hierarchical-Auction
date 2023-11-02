@@ -15,11 +15,11 @@ class action(object):
         self._cloud_node_number = cloud_node_number
         self._offloading_decision = np.zeros(
             (client_vehicle_number, 1 + server_vehicle_number + edge_node_number + cloud_node_number),
-            dtype = np.int       # 0: not offloading, 1: offloading 
+            dtype = np.int64       # 0: not offloading, 1: offloading 
         )
         self._computing_resource_decision = np.zeros(
             (client_vehicle_number, 1 + server_vehicle_number + edge_node_number + cloud_node_number),
-            dtype=np.float      # 0 ~ 1: computing resource decision
+            dtype = np.float64      # 0 ~ 1: computing resource decision
         )
         
     def get_offloading_decision(self) -> np.ndarray:
@@ -29,6 +29,10 @@ class action(object):
         return self._computing_resource_decision
     
     def set_offloading_decision(self, offloading_decision: np.ndarray) -> None:
+        # print("offloading_dicision: ", offloading_decision)
+        # print("\n offloading_dicision shape: ", offloading_decision.shape)
+        # print("\n self._offloading_decision: ", self._offloading_decision)
+        # print("\n self._offloading_decision shape: ", self._offloading_decision.shape)
         if offloading_decision.shape[0] != self._offloading_decision.shape[0] or offloading_decision.shape[1] != self._offloading_decision.shape[1]:
             raise Exception("Invalid offloading decision")
         self._offloading_decision = offloading_decision
@@ -53,10 +57,10 @@ class action(object):
         raise Exception("No computing resource decision of vehicle " + str(client_vehicle_index))
     
     def get_offloading_decison_at_local(self) -> np.ndarray:
-        return self._offloading_decision[:][0]
+        return self._offloading_decision[:, 0]
     
     def get_computing_resource_decision_at_local(self) -> np.ndarray:
-        return self._computing_resource_decision[:][0]
+        return self._computing_resource_decision[:, 0]
     
     def get_offloading_decision_at_server_vehicle(self, server_vehicle_index: int) -> List[int]:
         if server_vehicle_index > self._server_vehicle_number or server_vehicle_index < 0:
@@ -70,22 +74,23 @@ class action(object):
     def get_computing_resource_decision_at_server_vehicle(self, server_vehicle_index: int) -> np.ndarray:
         if server_vehicle_index > self._server_vehicle_number or server_vehicle_index < 0:
             raise Exception("Invalid server vehicle index")
-        return self._computing_resource_decision[:][server_vehicle_index]
+        return self._computing_resource_decision[:, server_vehicle_index]
     
     def get_offloading_decision_at_edge_node(self, edge_node_index: int) -> List[int]:
-        if edge_node_index > (self._edge_node_number + self._server_vehicle_number)  or \
-            edge_node_index < self._server_vehicle_number + 1:
+        new_edge_node_index = edge_node_index + self._server_vehicle_number + 1
+        if new_edge_node_index > (self._edge_node_number + self._server_vehicle_number)  or \
+            new_edge_node_index < self._server_vehicle_number + 1:
             raise Exception("Invalid edge node index")
         client_vehicle_index_list = []
         for i in range(self._client_vehicle_number):
-            if self._offloading_decision[i][edge_node_index] != 0:
+            if self._offloading_decision[i][new_edge_node_index] != 0:
                 client_vehicle_index_list.append(i)
         return client_vehicle_index_list
     
     def get_computing_resource_decision_at_edge_node(self, edge_node_index: int) -> np.ndarray:
         if edge_node_index > (self._edge_node_number + self._server_vehicle_number)  or edge_node_index < self._server_vehicle_number + 1:
             raise Exception("Invalid edge node index")
-        return self._computing_resource_decision[:][edge_node_index]
+        return self._computing_resource_decision[:, edge_node_index]
     
     def get_offloading_decision_at_cloud_node(self) -> List[int]:
         client_vehicle_index_list = []
@@ -95,7 +100,7 @@ class action(object):
         return client_vehicle_index_list
     
     def get_computing_resource_decision_at_cloud_node(self) -> np.ndarray:
-        return self._computing_resource_decision[:][-1]
+        return self._computing_resource_decision[:, -1]
     
     def get_offloading_decision_of_client_vehicle_to_server_vehicle(self, client_vehicle_index: int, server_vehicle_index: int) -> int:
         if server_vehicle_index > self._server_vehicle_number or server_vehicle_index < 0:
@@ -150,7 +155,7 @@ class action(object):
             raise Exception("Invalid offloading node index")
         if offloading_decision.shape[0] != self._offloading_decision.shape[0]:
             raise Exception("Invalid offloading decision")
-        self._offloading_decision[:][offloading_node_index] = offloading_decision
+        self._offloading_decision[:, offloading_node_index] = offloading_decision
         return None
     
     def set_computing_resource_decision_of_offloaded_node(self, offloading_node_index: int, computing_resource_decision: np.ndarray) -> None:
@@ -158,7 +163,7 @@ class action(object):
             raise Exception("Invalid offloading node index")
         if computing_resource_decision.shape[0] != self._computing_resource_decision.shape[0]:
             raise Exception("Invalid computing resource decision")
-        self._computing_resource_decision[:][offloading_node_index] = computing_resource_decision
+        self._computing_resource_decision[:, offloading_node_index] = computing_resource_decision
         return None
     
     def set_offloading_decision_at_local(self, client_vehicle_index, offloading_decision: int) -> None:
@@ -230,15 +235,30 @@ class action(object):
     
     def check_validity(self) -> bool:
         for i in range(self._client_vehicle_number):
-            if np.sum(self._offloading_decision[i]) != 1:
+            if np.abs(np.sum(self._offloading_decision[i]) - 1) > 1e-5:
+                print("np.sum(self._offloading_decision[i]) != 1:\n")
+                print("i: ", i)
+                print("self._offloading_decision[i]: ", self._offloading_decision[i])
+                print("sum: ", np.sum(self._offloading_decision[i]))
+                print("self._offloading_decision: ", self._offloading_decision)
                 return False
         for i in range(2 + self._server_vehicle_number + self._edge_node_number):
             if i == 0:  # local
                 for j in range(self._client_vehicle_number):
-                    if self._offloading_decision[j][i] > 1:
+                    if self._computing_resource_decision[j][i] > 1 + 1e-5:
+                        print("self._computing_resource_decision[j][i] > 1: \n")
+                        print("j: ", j)
+                        print("i: ", i)
+                        print("self._computing_resource_decision[j][i]: ", self._computing_resource_decision[j][i])
+                        print("self._computing_resource_decision: ", self._computing_resource_decision)
                         return False
             else:    # server vehicles, edge nodes, and the cloud
-                if np.sum(self._offloading_decision[:][i]) > 1:
+                if np.sum(self._computing_resource_decision[:, i]) > 1 + 1e-5:
+                    print("np.sum(self._computing_resource_decision[:, i]) > 1: \n")
+                    print("i: ", i)
+                    print("self._computing_resource_decision[:, i]: ", self._computing_resource_decision[:, i])
+                    print("sum: ", np.sum(self._computing_resource_decision[:, i]))
+                    print("self._computing_resource_decision: ", self._computing_resource_decision)
                     return False
         return True
 
