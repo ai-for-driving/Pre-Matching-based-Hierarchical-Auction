@@ -164,3 +164,6 @@ Trajectories_files/*.*
 
 Experiment/
 Experiment/*.*
+
+Results/
+Results/*.*
