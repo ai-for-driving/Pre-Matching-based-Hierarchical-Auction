@@ -1,5 +1,5 @@
 import numpy as np
-
+import time
 
 def compute_V2I_SINR(
     white_gaussian_noise: int,
@@ -20,6 +20,7 @@ def compute_V2V_SINR(
 ) -> float:
     return (1.0 / (cover_dBm_to_W(white_gaussian_noise) + intra_vehicle_interference + inter_vehicle_interference)) * \
         (np.abs(channel_gain) ** 2) * cover_mW_to_W(transmission_power)
+
 
 def compute_transmission_rate(SINR, bandwidth) -> float:
     """
@@ -81,3 +82,36 @@ def obtain_computing_time(
     computing_capability: float
 ) -> float:
     return data_size * per_cycle_required / computing_capability
+
+
+def transform_str_data_time_into_timestamp(data_time: str) -> int:
+    """
+    :param data_time: a string of data time time e.g., "2019-01-01 00:00:00"
+    :return: a timestamp
+    """
+    # US time zone
+    return int(time.mktime(time.strptime(data_time, "%Y-%m-%d %H:%M:%S")) + 3600 * 15)
+
+def transform_timestamp_into_str_data_time(timestamp: int) -> str:
+    """
+    :param timestamp: a timestamp
+    :return: a string of data time time e.g., "2019-01-01 00:00:00"
+    """
+    # US time zone
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp - 3600 * 15))
+
+def transform_str_data_time_into_timestamp_ms(data_time: str) -> int:
+    """
+    :param data_time: a string of data time time e.g., "2019-01-01 00:00:00"
+    :return: a timestamp
+    """
+    # US time zone
+    return int(time.mktime(time.strptime(data_time, "%Y-%m-%d %H:%M:%S"))) * 1000 + 3600 * 15 * 1000
+
+def transform_timestamp_ms_into_str_data_time(timestamp: int) -> str:
+    """
+    :param timestamp: a timestamp
+    :return: a string of data time time e.g., "2019-01-01 00:00:00"
+    """
+    # US time zone
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp / 1000 - 3600 * 15))

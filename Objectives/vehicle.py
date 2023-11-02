@@ -1,7 +1,7 @@
 from typing import List, Tuple
 import random
 import numpy as np
-from mobility import mobility, get_vehicle_trajectories, calculate_distance
+from Objectives.mobility import mobility
 
 class vehicle(object):
     '''
@@ -39,6 +39,8 @@ class vehicle(object):
         return self._mobilities
     
     def get_mobility(self, now: int) -> mobility:
+        if now >= self._time_slot_num:
+            raise ValueError("The time is out of range.")
         return self._mobilities[now]
     
     def get_computing_capability(self) -> float:
@@ -69,12 +71,20 @@ class vehicle(object):
         return [task for task in self._tasks if task[0] == now]
     
     def set_consumed_computing_capability(self, consumed_computing_capability: float, now: int, duration: int) -> None:
-        for i in range(now, now + duration):
+        if now + duration > self._time_slot_num:
+            end_time = self._time_slot_num
+        else:
+            end_time = now + duration
+        for i in range(now, end_time):
             self._available_computing_capability[i] = self._available_computing_capability[i] - consumed_computing_capability
         return None
     
     def set_consumed_storage_capability(self, consumed_storage_capability: float, now: int, duration: int) -> None:
-        for i in range(now, now + duration):
+        if now + duration > self._time_slot_num:
+            end_time = self._time_slot_num
+        else:
+            end_time = now + duration
+        for i in range(now, end_time):
             self._available_storage_capability[i] = self._available_storage_capability[i] - consumed_storage_capability
         return None
     
@@ -100,49 +110,3 @@ class vehicle(object):
             + "\ntransmission_power: " + self.get_transmission_power() \
             + "\ncommunication_range: " + self.get_communication_range() \
             + "\ntask_arrival_rate: " + self.get_task_arrival_rate()
-
-
-def generate_vehicles(
-    vehicle_num: int,
-    slot_length: int,
-    file_name: str,
-    min_computing_capability: float,
-    max_computing_capability: float,
-    min_storage_capability: float,
-    max_storage_capability: float,
-    min_transmission_power: float,
-    max_transmission_power: float,
-    communication_range: float,
-    min_task_arrival_rate: float,
-    max_task_arrival_rate: float,
-    task_num: int,
-    distribution: str,
-) -> List[vehicle]:
-    mobilities_list : List[List[mobility]] = get_vehicle_trajectories(
-        vehicle_num = vehicle_num,
-        slot_length = slot_length,
-        file_name = file_name,
-    )
-    vehicles = []
-    if distribution == "uniform":
-        for _ in range(vehicle_num):
-            vehicles.append(
-                vehicle(
-                    mobilities=mobilities_list[_],
-                    computing_capability=random.uniform(min_computing_capability, max_computing_capability),
-                    storage_capability=random.uniform(min_storage_capability, max_storage_capability),
-                    transmission_power=random.uniform(min_transmission_power, max_transmission_power),
-                    time_slot_num=slot_length,
-                    communication_range=communication_range,
-                    task_arrival_rate=random.uniform(min_task_arrival_rate, max_task_arrival_rate),
-                    task_num=task_num,
-                )
-            )
-        return vehicles
-    else:
-        raise Exception("distribution not supported")
-    
-    
-if __name__ == "__main__":
-    task_arrival_times = np.random.poisson(0.1, 300)
-    print(task_arrival_times)

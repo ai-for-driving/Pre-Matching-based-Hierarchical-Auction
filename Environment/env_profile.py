@@ -11,7 +11,11 @@ class env_profile(object):
         min_deadline_of_tasks: float,
         max_deadline_of_tasks: float,
         vehicle_num: int,
-        vehicle_mobility_file_name: str,
+        vehicle_mobility_file_name_key: str,
+        vehicular_trajectories_processing_start_time : str,
+        vehicular_trajectories_processing_selection_way : str,
+        vehicular_trajectories_processing_filling_way : str,
+        vehicular_trajectories_processing_chunk_size : int,
         min_computing_capability_of_vehicles: float,
         max_computing_capability_of_vehicles: float,
         min_storage_capability_of_vehicles: float,
@@ -52,7 +56,11 @@ class env_profile(object):
         self._min_deadline_of_tasks: float = min_deadline_of_tasks
         self._max_deadline_of_tasks: float = max_deadline_of_tasks
         self._vehicle_num: int = vehicle_num
-        self._vehicle_mobility_file_name: str = vehicle_mobility_file_name
+        self._vehicle_mobility_file_name_key: str = vehicle_mobility_file_name_key
+        self._vehicular_trajectories_processing_start_time : str = vehicular_trajectories_processing_start_time
+        self._vehicular_trajectories_processing_selection_way : str = vehicular_trajectories_processing_selection_way
+        self._vehicular_trajectories_processing_filling_way : str = vehicular_trajectories_processing_filling_way
+        self._vehicular_trajectories_processing_chunk_size : int = vehicular_trajectories_processing_chunk_size
         self._min_computing_capability_of_vehicles: float = min_computing_capability_of_vehicles
         self._max_computing_capability_of_vehicles: float = max_computing_capability_of_vehicles
         self._min_storage_capability_of_vehicles: float = min_storage_capability_of_vehicles
@@ -82,7 +90,7 @@ class env_profile(object):
         self._V2V_bandwidth: float = V2V_bandwidth
         self._V2I_bandwidth: float = V2I_bandwidth
         self._white_gaussian_noise: float = white_gaussian_noise
-        path_loss_exponent: int = 3
+        self._path_loss_exponent: int = 3
         
     def get_slot_length(self) -> int:
         return self._slot_length
@@ -114,8 +122,20 @@ class env_profile(object):
     def get_vehicle_num(self) -> int:
         return self._vehicle_num
     
-    def get_vehicle_mobility_file_name(self) -> str:
-        return self._vehicle_mobility_file_name
+    def get_vehicle_mobility_file_name_key(self) -> str:
+        return self._vehicle_mobility_file_name_key
+    
+    def get_vehicular_trajectories_processing_start_time(self) -> str:
+        return self._vehicular_trajectories_processing_start_time
+    
+    def get_vehicular_trajectories_processing_selection_way(self) -> str:
+        return self._vehicular_trajectories_processing_selection_way
+    
+    def get_vehicular_trajectories_processing_filling_way(self) -> str:
+        return self._vehicular_trajectories_processing_filling_way
+    
+    def get_vehicular_trajectories_processing_chunk_size(self) -> int:
+        return self._vehicular_trajectories_processing_chunk_size
     
     def get_min_computing_capability_of_vehicles(self) -> float:
         return self._min_computing_capability_of_vehicles
