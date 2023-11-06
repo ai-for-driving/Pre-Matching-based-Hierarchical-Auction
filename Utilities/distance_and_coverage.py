@@ -50,6 +50,8 @@ def get_vehicles_under_V2V_communication_range(
                     vehicles_under_V2V_communication_range[i][j] = 1
     return vehicles_under_V2V_communication_range
 
+
+
 def get_distance_matrix_between_vehicles_and_edge_nodes(
     client_vehicles: List[vehicle],
     edge_nodes: List[edge_node],
@@ -74,7 +76,7 @@ def get_vehicles_under_V2I_communication_range(
 ) -> np.ndarray:
     num_vehicles = len(client_vehicles)
     num_edge_nodes = len(edge_nodes)
-    result = np.zeros((num_vehicles, num_edge_nodes))
+    vehicles_under_V2I_communication_range = np.zeros((num_vehicles, num_edge_nodes))
     for i in range(num_vehicles):
         for j in range(num_edge_nodes):
             distance = calculate_distance(
@@ -83,8 +85,9 @@ def get_vehicles_under_V2I_communication_range(
                 type="edge_nodes"
             )
             if(distance <= edge_nodes[j].get_communication_range()):
-                result[i][j] = 1
-    return result
+                vehicles_under_V2I_communication_range[i][j] = 1
+    return vehicles_under_V2I_communication_range
+
 
 def get_distance_matrix_between_edge_nodes(
     edge_nodes: List[edge_node],

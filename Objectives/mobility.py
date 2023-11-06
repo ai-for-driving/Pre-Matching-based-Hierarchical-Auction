@@ -6,7 +6,7 @@ class mobility(object):
         y: float,
         speed: float,
         acceleration: float,
-        direction: float,
+        direction: float,  #  1-东行（EB），2-北行（NB），3-西行（WB），4-南行（SB）
         time : float,
     ) -> None:
         self._x : float = x
