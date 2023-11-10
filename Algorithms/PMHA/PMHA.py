@@ -1,118 +1,149 @@
 from typing import List
 import numpy as np
 from player import buyer, seller
+from Objectives.task import task
+from Objectives.vehicle import vehicle
+from Objectives.edge_node import edge_node
+from Objectives.cloud_server import cloud_server
+from Strategy.strategy import action
+from best_k_matching import init_preference_list, best_k_offloading_node_matching, get_connection_time_of_vehicles_under_V2V_communication_range, get_connection_time_of_vehicle_under_V2I_communication_range
+from vehicle_edge_auction import init_buyers_and_sellers_at_vehicle_edge_auction, init_bids_and_asks_of_vehicle_edge_auction, resource_allocation_and_pricing
+from edge_cloud_auction import init_buyers_and_sellers_at_edge_cloud_auction, init_bids_and_asks_of_edge_cloud_auction, find_key_index, resource_allocation_of_edge_cloud_auction, payment_pricing
 
-def init_bids_and_asks(
-    buyers: List[buyer],
-    sellers: List[seller],
-) -> tuple[List[buyer], List[seller]]:
-    buyer_num = len(buyers)
-    random_bids = np.random.uniform(0, 1, buyer_num)
-    for buyer in buyers:
-        buyer.set_bid(random_bids[buyer.get_index()])
-    sorted_buyers = sorted(buyers, key=lambda x: x.get_bid(), reverse=True)
-    seller_num = len(sellers)
-    random_asks = np.random.uniform(0, 1, seller_num)
-    for seller in sellers:
-        seller.set_ask(random_asks[seller.get_index()])
-    sorted_sellers = sorted(sellers, key=lambda x: x.get_ask())
-    return sorted_buyers, sorted_sellers
+class PMHA(object):
+    
+    def __init__(
+        self,
+        client_vehicle_number: int,
+        server_vehicle_number: int,
+        edge_node_number: int,
+        cloud_server_number: int,
+        k_offloading_node_num: int,
+        random_change_matching_probability: float,
+        path_loss_exponent: int,
+    ) -> None:
+        self._k_offloading_node_num = k_offloading_node_num
+        self._random_change_matching_probability = random_change_matching_probability
+        self._path_loss_exponent = path_loss_exponent
+        self._action = action(
+            client_vehicle_number=client_vehicle_number,
+            server_vehicle_number=server_vehicle_number,
+            edge_node_number=edge_node_number,
+            cloud_server_number=cloud_server_number,
+        )
 
-def find_key_index(
-    sorted_buyers: List[buyer],
-    sorted_sellers: List[seller],
-):
-    max_buyer_number = 0
-    buyer_key_index = 0
-    seller_key_index = 0
+    def generate_action(
+        self,
+        client_vehicles: List[vehicle],
+        server_vehicles: List[vehicle],
+        edge_nodes: List[edge_node],
+        cloud: cloud_server,
+        tasks: List[task],
+        now: int,
+        distance_matrix_between_client_vehicles_and_server_vehicles: np.ndarray,
+        distance_matrix_between_client_vehicles_and_edge_nodes: np.ndarray,
+        vehicles_under_V2V_communication_range: np.ndarray,
+        vehicles_under_V2I_communication_range: np.ndarray,
+    ) -> action:
+        
+        connection_time_of_vehicles_under_V2V_communication_range = get_connection_time_of_vehicles_under_V2V_communication_range(
+            distance_matrix=distance_matrix_between_client_vehicles_and_server_vehicles,
+            vehicles_under_V2V_communication_range=vehicles_under_V2V_communication_range,
+            client_vehicles=client_vehicles,
+            server_vehicles=server_vehicles,
+            now=now,
+        )
     
-    for buyer in sorted_buyers:
-        buyer_number = buyer.get_index()
-        for seller in sorted_sellers:
-            seller_number = seller.get_index()
-            buyer_bid = buyer.get_bid()
-            seller_ask = seller.get_ask()
-            if buyer_bid < seller_ask:
-                continue
-            else:
-                if (buyer_number == len(sorted_buyers) - 1) or (seller_number == len(sorted_sellers) - 1) \
-                    or ((buyer_number < len(sorted_buyers) - 1) and \
-                        (seller_number < len(sorted_sellers) - 1) and \
-                        (sorted_buyers[buyer_number + 1].get_bid() < sorted_sellers[seller_number + 1].get_ask())):
-                    offered_computing_resource_sum = 0
-                    offered_storage_resource_sum = 0
-                    for _ in range(seller_number - 1):
-                        offered_computing_resource_sum += sorted_sellers[_].get_offered_computing_resources()
-                        offered_storage_resource_sum += sorted_sellers[_].get_offered_storage_resources()
-                    for buyer_prime_index in range(buyer_number - 1):
-                        offered_computing_resource_sum -= sorted_buyers[buyer_prime_index].get_requested_computing_resources()
-                        offered_storage_resource_sum -= sorted_buyers[buyer_prime_index].get_requested_storage_resources()
-                        if offered_computing_resource_sum < 0 or offered_storage_resource_sum < 0:
-                            if buyer_prime_index > max_buyer_number + 1:
-                                max_buyer_number = buyer_prime_index - 1
-                                buyer_key_index = buyer_prime_index - 1
-                                seller_key_index = seller_number
-                                break
-    return buyer_key_index, seller_key_index
-
-def resource_allocation_of_edge_cloud_auction(
-    sorted_buyers: List[buyer],
-    sorted_sellers: List[seller],
-    buyer_key_index: int,
-    seller_key_index: int,
-    buyer_num: int,
-    seller_num: int,
-) -> np.ndarray: 
-    new_buyers = sorted_buyers[0:buyer_key_index + 1]
-    new_sellers = sorted_sellers[0:seller_key_index + 1]
-    
-    offloading_decision = np.zeros((buyer_num, seller_num))
-    
-    for seller in new_sellers:
-        offered_computing_resources = seller.get_offered_computing_resources()
-        offered_storage_resources = seller.get_offered_storage_resources()
-        for buyer in new_buyers:
-            requested_computing_resources = buyer.get_requested_computing_resources()
-            requested_storage_resources = buyer.get_requested_storage_resources()
-            if offered_computing_resources < requested_computing_resources or offered_storage_resources < requested_storage_resources:
-                seller_key_index = seller.get_index() - 1
-                break
-        for buyer in new_buyers:
-            requested_computing_resources = buyer.get_requested_computing_resources()
-            requested_storage_resources = buyer.get_requested_storage_resources()
-            if offered_computing_resources >= requested_computing_resources and offered_storage_resources >= requested_storage_resources:
-                offloading_decision[buyer.get_index()][seller.get_index()] = 1
-                new_buyers.remove(buyer)
-                seller.set_offered_computing_resources(offered_computing_resources - requested_computing_resources)
-                seller.set_offered_storage_resources(offered_storage_resources - requested_storage_resources)
-    
-    return offloading_decision
-
-def payment_pricing(
-    buyers: List[buyer],
-    sellers: List[seller],
-    buyer_key_index: int,
-    seller_key_index: int,
-    offloading_decision: np.ndarray,
-):
-    for buyer in buyers:
-        if offloading_decision[buyer.get_index()].sum() == 1:
-            bid_high = buyer.get_bid()
-            bid_low = buyers[buyer.get_index() + 1].get_bid()
-            bid_temp = buyer.get_bid()
-            while bid_high - bid_low > 0.0001:
-                bid_now = (bid_high + bid_low) / 2
-                buyer.set_bid(bid_now)
-                sorted_buyers = sorted(buyers, key=lambda x: x.get_bid(), reverse=True)
-                buyer_key_index, seller_key_index = find_key_index(sorted_buyers, sellers)
-                offloading_decision = resource_allocation_of_edge_cloud_auction(sorted_buyers, sellers, buyer_key_index, seller_key_index, len(buyers), len(sellers))
-                if offloading_decision[buyer.get_index()].sum() == 1:
-                    bid_low = bid_now
-                else:
-                    bid_high = bid_now
-                buyer.set_payment(bid_now)
-                bid_now = bid_temp
-                
-    for seller in sellers:
-        if offloading_decision[:, seller.get_index()].sum() > 0:
-            seller.set_payment(sellers[seller_key_index + 1].get_ask())
+        connection_time_of_vehicles_under_V2I_communication_range = get_connection_time_of_vehicle_under_V2I_communication_range(
+            vehicles_under_V2I_communication_range=vehicles_under_V2I_communication_range,
+            client_vehicles=client_vehicles,
+            edge_nodes=edge_nodes,
+            now=now,
+        )
+        
+        preference_list = init_preference_list(
+            client_vehicles=client_vehicles,
+            server_vehicles=server_vehicles,
+            edge_nodes=edge_nodes,
+            vehicles_under_V2V_communication_range=vehicles_under_V2V_communication_range,
+            vehicles_under_V2I_communication_range=vehicles_under_V2I_communication_range,
+            connection_time_of_vehicles_under_V2V_communication_range=connection_time_of_vehicles_under_V2V_communication_range,
+            connection_time_of_vehicles_under_V2I_communication_range=connection_time_of_vehicles_under_V2I_communication_range,
+            now=now,
+        )
+        
+        best_k_nodes = best_k_offloading_node_matching(
+            client_vehicles=client_vehicles,
+            server_vehicles=server_vehicles,
+            edge_nodes=edge_nodes,
+            k_offloading_node_num=self._k_offloading_node_num,
+            distance_matrix_between_client_vehicles_and_server_vehicles=distance_matrix_between_client_vehicles_and_server_vehicles,
+            distance_matrix_between_client_vehicles_and_edge_nodes=distance_matrix_between_client_vehicles_and_edge_nodes,
+            preference_list=preference_list,
+            random_change_matching_probability=self._random_change_matching_probability,
+            path_loss_exponent=self._path_loss_exponent,
+        )
+        
+        
+        self._action, vehicle_edge_auction_buyer_list, vehicle_edge_auction_seller_list = init_buyers_and_sellers_at_vehicle_edge_auction(
+            client_vehicles=client_vehicles,
+            server_vehicles=server_vehicles,
+            edge_nodes=edge_nodes,
+            tasks=tasks,
+            action=self._action,
+            best_k_nodes=best_k_nodes,
+            now=now,
+        )
+        
+        vehicle_edge_auction_buyer_list, vehicle_edge_auction_seller_list = init_bids_and_asks_of_vehicle_edge_auction(
+            buyers_list=vehicle_edge_auction_buyer_list,
+            sellers_list=vehicle_edge_auction_seller_list,
+        )
+        
+        self._action, vehicle_edge_auction_offloading_decision, vehicle_edge_auction_buyer_list, vehicle_edge_auction_seller_list = resource_allocation_and_pricing(
+            client_vehicle_number=len(client_vehicles),
+            server_vehicle_number=len(server_vehicles),
+            edge_node_number=len(edge_nodes),
+            buyers_list=vehicle_edge_auction_buyer_list,
+            sellers_list=vehicle_edge_auction_seller_list,
+            action=self._action,
+        )
+        
+        self._action, edge_cloud_auction_buyers, edge_cloud_auction_sellers = init_buyers_and_sellers_at_edge_cloud_auction(
+            client_vehicles=client_vehicles,
+            edge_nodes=edge_nodes,
+            cloud=cloud,
+            tasks=tasks,
+            offloading_decision=vehicle_edge_auction_offloading_decision,
+            action=self._action,
+            now=now,
+        )
+        
+        edge_cloud_auction_buyers, edge_cloud_auction_sellers = init_bids_and_asks_of_edge_cloud_auction(
+            buyers=edge_cloud_auction_buyers,
+            sellers=edge_cloud_auction_sellers,
+        )
+        
+        buyer_key_index, seller_key_index = find_key_index(
+            sorted_buyers=edge_cloud_auction_buyers,
+            sorted_sellers=edge_cloud_auction_sellers,
+        )
+        
+        self._action, edge_cloud_auction_offloading_decision = resource_allocation_of_edge_cloud_auction(
+            sorted_buyers=edge_cloud_auction_buyers,
+            sorted_sellers=edge_cloud_auction_sellers,
+            buyer_key_index=buyer_key_index,
+            seller_key_index=seller_key_index,
+            action=self._action,
+        )
+        
+        
+        edge_cloud_auction_buyers, edge_cloud_auction_sellers = payment_pricing(
+            buyers=edge_cloud_auction_buyers,
+            sellers=edge_cloud_auction_sellers,
+            buyer_key_index=buyer_key_index,
+            seller_key_index=seller_key_index,
+            offloading_decision=edge_cloud_auction_offloading_decision,
+        )
+        
+        return self._action

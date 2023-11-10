@@ -45,12 +45,14 @@ class action(object):
         return None
     
     def get_offloading_decision_of_client_vehicle(self, client_vehicle_index: int) -> int:
+        self.check_client_vehicle_index(client_vehicle_index)
         for i in range(self._offloading_decision.shape[1]):
             if self._offloading_decision[client_vehicle_index][i] != 0:
                 return i
         raise Exception("No offloading decision of vehicle " + str(client_vehicle_index))
     
     def get_computing_resource_decision_of_client_vehicle(self, client_vehicle_index: int) -> float:
+        self.check_client_vehicle_index(client_vehicle_index)
         for i in range(self._computing_resource_decision.shape[1]):
             if self._computing_resource_decision[client_vehicle_index][i] != 0:
                 return self._computing_resource_decision[client_vehicle_index][i]
@@ -63,24 +65,19 @@ class action(object):
         return self._computing_resource_decision[:, 0]
     
     def get_offloading_decision_at_server_vehicle(self, server_vehicle_index: int) -> List[int]:
-        if server_vehicle_index > self._server_vehicle_number or server_vehicle_index < 0:
-            raise Exception("Invalid server vehicle index")
+        new_server_vehicle_index = self.get_new_server_vehicle_index(server_vehicle_index)
         client_vehicle_index_list = []
         for i in range(self._client_vehicle_number):
-            if self._offloading_decision[i][server_vehicle_index] != 0:
+            if self._offloading_decision[i][new_server_vehicle_index] != 0:
                 client_vehicle_index_list.append(i)
         return client_vehicle_index_list
     
     def get_computing_resource_decision_at_server_vehicle(self, server_vehicle_index: int) -> np.ndarray:
-        if server_vehicle_index > self._server_vehicle_number or server_vehicle_index < 0:
-            raise Exception("Invalid server vehicle index")
-        return self._computing_resource_decision[:, server_vehicle_index]
+        new_server_vehicle_index = self.get_new_server_vehicle_index(server_vehicle_index)
+        return self._computing_resource_decision[:, new_server_vehicle_index]
     
     def get_offloading_decision_at_edge_node(self, edge_node_index: int) -> List[int]:
-        new_edge_node_index = edge_node_index + self._server_vehicle_number + 1
-        if new_edge_node_index > (self._edge_node_number + self._server_vehicle_number)  or \
-            new_edge_node_index < self._server_vehicle_number + 1:
-            raise Exception("Invalid edge node index")
+        new_edge_node_index = self.get_new_edge_node_index(edge_node_index)
         client_vehicle_index_list = []
         for i in range(self._client_vehicle_number):
             if self._offloading_decision[i][new_edge_node_index] != 0:
@@ -88,9 +85,8 @@ class action(object):
         return client_vehicle_index_list
     
     def get_computing_resource_decision_at_edge_node(self, edge_node_index: int) -> np.ndarray:
-        if edge_node_index > (self._edge_node_number + self._server_vehicle_number)  or edge_node_index < self._server_vehicle_number + 1:
-            raise Exception("Invalid edge node index")
-        return self._computing_resource_decision[:, edge_node_index]
+        new_edge_node_index = self.get_new_edge_node_index(edge_node_index)
+        return self._computing_resource_decision[:, new_edge_node_index]
     
     def get_offloading_decision_at_cloud_node(self) -> List[int]:
         client_vehicle_index_list = []
@@ -103,48 +99,42 @@ class action(object):
         return self._computing_resource_decision[:, -1]
     
     def get_offloading_decision_of_client_vehicle_to_server_vehicle(self, client_vehicle_index: int, server_vehicle_index: int) -> int:
-        if server_vehicle_index > self._server_vehicle_number or server_vehicle_index < 0:
-            raise Exception("Invalid server vehicle index")
-        if client_vehicle_index > self._client_vehicle_number or client_vehicle_index < 0:
-            raise Exception("Invalid client vehicle index")
-        return self._offloading_decision[client_vehicle_index][server_vehicle_index]
+        self.check_client_vehicle_index(client_vehicle_index)
+        new_server_vehicle_index = self.get_new_server_vehicle_index(server_vehicle_index)
+        return self._offloading_decision[client_vehicle_index][new_server_vehicle_index]
 
     def get_computing_resource_decision_of_client_vehicle_to_server_vehicle(self, client_vehicle_index: int, server_vehicle_index: int) -> float:
-        if server_vehicle_index > self._server_vehicle_number or server_vehicle_index < 0:
-            raise Exception("Invalid server vehicle index")
-        if client_vehicle_index > self._client_vehicle_number or client_vehicle_index < 0:
-            raise Exception("Invalid client vehicle index")
-        return self._computing_resource_decision[client_vehicle_index][server_vehicle_index]
+        self.check_client_vehicle_index(client_vehicle_index)
+        new_server_vehicle_index = self.get_new_server_vehicle_index(server_vehicle_index)
+        return self._computing_resource_decision[client_vehicle_index][new_server_vehicle_index]
     
     def get_offloading_decision_of_vehicle_to_edge_node(self, client_vehicle_index: int, edge_node_index: int) -> int:
-        if edge_node_index > (self._edge_node_number + self._server_vehicle_number)  or edge_node_index < self._server_vehicle_number + 1:
-            raise Exception("Invalid edge node index")
-        if client_vehicle_index > self._client_vehicle_number or client_vehicle_index < 0:
-            raise Exception("Invalid client vehicle index")
-        return self._offloading_decision[client_vehicle_index][edge_node_index]
+        self.check_client_vehicle_index(client_vehicle_index)
+        new_edge_node_index = self.get_new_edge_node_index(edge_node_index)
+        return self._offloading_decision[client_vehicle_index][new_edge_node_index]
     
     def get_computing_resource_decision_of_vehicle_to_edge_node(self, client_vehicle_index: int, edge_node_index: int) -> float:
-        if edge_node_index > (self._edge_node_number + self._server_vehicle_number)  or edge_node_index < self._server_vehicle_number + 1:
-            raise Exception("Invalid edge node index")
-        if client_vehicle_index > self._client_vehicle_number or client_vehicle_index < 0:
-            raise Exception("Invalid client vehicle index")
-        return self._computing_resource_decision[client_vehicle_index][edge_node_index]
+        self.check_client_vehicle_index(client_vehicle_index)
+        new_edge_node_index = self.get_new_edge_node_index(edge_node_index)
+        return self._computing_resource_decision[client_vehicle_index][new_edge_node_index]
     
     def get_offloading_decision_of_vehicle_to_cloud_node(self, client_vehicle_index: int) -> int:
+        self.check_client_vehicle_index(client_vehicle_index)
         return self._offloading_decision[client_vehicle_index][-1]
     
     def get_computing_resource_decision_of_vehicle_to_cloud_node(self, client_vehicle_index: int) -> float:
+        self.check_client_vehicle_index(client_vehicle_index)
         return self._computing_resource_decision[client_vehicle_index][-1]
     
     def set_offloading_decision_of_vehicle(self, client_vehicle_index: int, offloading_decision: np.ndarray) -> None:
+        self.check_client_vehicle_index(client_vehicle_index)
         if offloading_decision.shape[0] != self._offloading_decision.shape[1]:
             raise Exception("Invalid offloading decision")
         self._offloading_decision[client_vehicle_index] = offloading_decision
         return None
     
     def set_computing_resource_decision_of_vehicle(self, client_vehicle_index: int, computing_resource_decision: np.ndarray) -> None:
-        if client_vehicle_index > self._client_vehicle_number or client_vehicle_index < 0:
-            raise Exception("Invalid client vehicle index")
+        self.check_client_vehicle_index(client_vehicle_index)
         if computing_resource_decision.shape[0] != self._computing_resource_decision.shape[1]:
             raise Exception("Invalid computing resource decision")
         self._computing_resource_decision[client_vehicle_index] = computing_resource_decision
@@ -167,71 +157,73 @@ class action(object):
         return None
     
     def set_offloading_decision_at_local(self, client_vehicle_index, offloading_decision: int) -> None:
-        if client_vehicle_index > self._client_vehicle_number or client_vehicle_index < 0:
-            raise Exception("Invalid client vehicle index")
+        self.check_client_vehicle_index(client_vehicle_index)
         if offloading_decision > 1 or offloading_decision < 0:
             raise Exception("Invalid offloading decision")
         self._offloading_decision[client_vehicle_index][0] = offloading_decision
         return None
     
     def set_computing_resource_decision_at_local(self, client_vehicle_index: int, computing_resource_decision: float) -> None:
-        if client_vehicle_index > self._client_vehicle_number or client_vehicle_index < 0:
-            raise Exception("Invalid client vehicle index")
+        self.check_client_vehicle_index(client_vehicle_index)
         self._computing_resource_decision[client_vehicle_index][0] = computing_resource_decision
         return None
     
     def set_offloading_decision_of_vehicle_to_vehicle(self, client_vehicle_index: int, server_vehicle_index: int, offloading_decision: int) -> None:
-        if client_vehicle_index > self._client_vehicle_number or client_vehicle_index < 0:
-            raise Exception("Invalid client vehicle index")
-        if server_vehicle_index > self._server_vehicle_number or server_vehicle_index < 0:
-            raise Exception("Invalid server vehicle index")
+        self.check_client_vehicle_index(client_vehicle_index)
+        new_server_vehicle_index = self.get_new_server_vehicle_index(server_vehicle_index)
         if offloading_decision > 1 or offloading_decision < 0:
             raise Exception("Invalid offloading decision")
-        self._offloading_decision[client_vehicle_index][server_vehicle_index] = offloading_decision
+        self._offloading_decision[client_vehicle_index][new_server_vehicle_index] = offloading_decision
         return None
     
     def set_computing_resource_decision_of_vehicle_to_vehicle(self, client_vehicle_index: int, server_vehicle_index: int, computing_resource_decision: float) -> None:
-        if client_vehicle_index > self._client_vehicle_number or client_vehicle_index < 0:
-            raise Exception("Invalid client vehicle index")
-        if server_vehicle_index > self._server_vehicle_number or server_vehicle_index < 0:
-            raise Exception("Invalid server vehicle index")
-        self._computing_resource_decision[client_vehicle_index][server_vehicle_index] = computing_resource_decision
+        self.check_client_vehicle_index(client_vehicle_index)
+        new_server_vehicle_index = self.get_new_server_vehicle_index(server_vehicle_index)
+        self._computing_resource_decision[client_vehicle_index][new_server_vehicle_index] = computing_resource_decision
         return None
     
     def set_offloading_decision_of_vehicle_to_edge_node(self, client_vehicle_index: int, edge_node_index: int, offloading_decision: int) -> None:
-        if client_vehicle_index > self._client_vehicle_number or client_vehicle_index < 0:
-            raise Exception("Invalid client vehicle index")
-        if edge_node_index > (self._edge_node_number + self._server_vehicle_number)  or edge_node_index < self._server_vehicle_number + 1:
-            raise Exception("Invalid edge node index")
+        self.check_client_vehicle_index(client_vehicle_index)
+        new_edge_node_index = self.get_new_edge_node_index(edge_node_index)
         if offloading_decision > 1 or offloading_decision < 0:
             raise Exception("Invalid offloading decision")
-        self._offloading_decision[client_vehicle_index][edge_node_index] = offloading_decision
+        self._offloading_decision[client_vehicle_index][new_edge_node_index] = offloading_decision
         return None
     
     def set_computing_resource_decision_of_vehicle_to_edge_node(self, client_vehicle_index: int, edge_node_index: int, computing_resource_decision: float) -> None:
-        if client_vehicle_index > self._client_vehicle_number or client_vehicle_index < 0:
-            raise Exception("Invalid client vehicle index")
-        if edge_node_index > (self._edge_node_number + self._server_vehicle_number)  or edge_node_index < self._server_vehicle_number + 1:
-            raise Exception("Invalid edge node index")
-        self._computing_resource_decision[client_vehicle_index][edge_node_index] = computing_resource_decision
+        self.check_client_vehicle_index(client_vehicle_index)
+        new_edge_node_index = self.get_new_edge_node_index(edge_node_index)
+        self._computing_resource_decision[client_vehicle_index][new_edge_node_index] = computing_resource_decision
         return None
     
     def set_offloading_decision_of_vehicle_to_cloud_node(self, client_vehicle_index: int, offloading_decision: int) -> None:
-        if client_vehicle_index > self._client_vehicle_number or client_vehicle_index < 0:
-            raise Exception("Invalid client vehicle index")
+        self.check_client_vehicle_index(client_vehicle_index)
         if offloading_decision > 1 or offloading_decision < 0:
             raise Exception("Invalid offloading decision")
         self._offloading_decision[client_vehicle_index][-1] = offloading_decision
         return None
     
     def set_computing_resource_decision_of_vehicle_to_cloud_node(self, client_vehicle_index: int, computing_resource_decision: float) -> None:
-        if client_vehicle_index > self._client_vehicle_number or client_vehicle_index < 0:
-            raise Exception("Invalid client vehicle index")
+        self.check_client_vehicle_index(client_vehicle_index)
         self._computing_resource_decision[client_vehicle_index][-1] = computing_resource_decision
         return None
     
     def __str__(self) -> str:
         return "offloading_decision: " + str(self._offloading_decision) + "\n" + "computing_resource_decision: " + str(self._computing_resource_decision) + "\n"
+    
+    def check_client_vehicle_index(self, client_vehicle_index: int) -> None:
+        if client_vehicle_index > self._client_vehicle_number or client_vehicle_index < 0:
+            raise Exception("Invalid client vehicle index")
+    
+    def get_new_server_vehicle_index(self, server_vehicle_index: int) -> int:
+        if server_vehicle_index > self._server_vehicle_number or server_vehicle_index < 0:
+            raise Exception("Invalid server vehicle index")
+        return server_vehicle_index + 1
+    
+    def get_new_edge_node_index(self, edge_node_index: int) -> int:
+        if edge_node_index > self._edge_node_number or edge_node_index < 0:
+            raise Exception("Invalid edge node index")
+        return edge_node_index + self._server_vehicle_number + 1
     
     def check_validity(self) -> bool:
         for i in range(self._client_vehicle_number):

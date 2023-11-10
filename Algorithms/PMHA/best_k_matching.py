@@ -89,32 +89,20 @@ def get_connection_time_of_vehicle_under_V2I_communication_range(
     return connection_time
 
 def init_preference_list(
-    client_vehicle_num: int,
-    server_vehicle_num: int,
-    edge_node_num: int,
     client_vehicles: List[vehicle],
     server_vehicles: List[vehicle],
     edge_nodes: List[edge_node],
-    distance_matrix_between_client_vehicles_and_server_vehicles : np.ndarray,
     vehicles_under_V2V_communication_range: np.ndarray,
     vehicles_under_V2I_communication_range: np.ndarray,
+    connection_time_of_vehicles_under_V2V_communication_range: np.ndarray,
+    connection_time_of_vehicles_under_V2I_communication_range: np.ndarray,
     now: int,
 ) -> List[List[dict]]:
-    preference_list = list()
-    connection_time_of_vehicles_under_V2V_communication_range = get_connection_time_of_vehicles_under_V2V_communication_range(
-        distance_matrix=distance_matrix_between_client_vehicles_and_server_vehicles,
-        vehicles_under_V2V_communication_range=vehicles_under_V2V_communication_range,
-        client_vehicles=client_vehicles,
-        server_vehicles=server_vehicles,
-        now=now,
-    )
+    client_vehicle_num = len(client_vehicles)
+    server_vehicle_num = len(server_vehicles)
+    edge_node_num = len(edge_nodes)
     
-    connection_time_of_vehicle_under_V2I_communication_range = get_connection_time_of_vehicle_under_V2I_communication_range(
-        vehicles_under_V2I_communication_range=vehicles_under_V2I_communication_range,
-        client_vehicles=client_vehicles,
-        edge_nodes=edge_nodes,
-        now=now,
-    )
+    preference_list = list()
     
     for client_vehicle_index in range(client_vehicle_num):
         client_vehicle_preference_list = list()
@@ -134,7 +122,7 @@ def init_preference_list(
                     {
                         "type": "edge_node", 
                         "id": edge_node_index, 
-                        "connection_time": connection_time_of_vehicles_under_V2V_communication_range[client_vehicle_index][edge_node_index], 
+                        "connection_time": connection_time_of_vehicles_under_V2I_communication_range[client_vehicle_index][edge_node_index], 
                         "computing_capability": edge_nodes[edge_node_index].get_available_computing_capability(now=now),
                         "storage_capability": edge_nodes[edge_node_index].get_available_storage_capability(now=now),
                     })
@@ -152,39 +140,26 @@ def best_k_offloading_node_matching(
     client_vehicles: List[vehicle],
     server_vehicles: List[vehicle],
     edge_nodes: List[edge_node],
-    k_offloading_node: int,
+    k_offloading_node_num: int,
     distance_matrix_between_client_vehicles_and_server_vehicles: np.ndarray,
     distance_matrix_between_client_vehicles_and_edge_nodes: np.ndarray,
-    vehicles_under_V2V_communication_range: np.ndarray,
-    vehicles_under_V2I_communication_range: np.ndarray,
-    now: int,
+    preference_list: List[List[dict]],
     random_change_matching_probability: float,
     path_loss_exponent: int,
-) -> List[List[dict]]:
+) -> np.ndarray:
     # Initialization
     client_vehicle_num = len(client_vehicles)
     server_vehicle_num = len(server_vehicles)
     edge_node_num = len(edge_nodes)
-    preference_list = init_preference_list(
-        client_vehicle_num=client_vehicle_num,
-        server_vehicle_num=server_vehicle_num,
-        edge_node_num=edge_node_num,
-        client_vehicles=client_vehicles,
-        server_vehicles=server_vehicles,
-        edge_nodes=edge_nodes,
-        distance_matrix_between_client_vehicles_and_server_vehicles=distance_matrix_between_client_vehicles_and_server_vehicles,
-        vehicles_under_V2V_communication_range=vehicles_under_V2V_communication_range,
-        vehicles_under_V2I_communication_range=vehicles_under_V2I_communication_range,
-        now=now,
-    )
+
     init_matching = matching(
         client_vehicle_num=client_vehicle_num,
         preference_list=preference_list,
     )
-
-    best_k_nodes = [[] for _ in range(client_vehicle_num)]
     
-    now_matching = init_matching.copy()
+    best_k_nodes = np.zeros((client_vehicle_num, server_vehicle_num + edge_node_num))
+    
+    now_matching = init_matching.deepcopy()
     
     channel_gains_between_client_vehicle_and_server_vehicles = obtain_channel_gains_between_client_vehicle_and_server_vehicles(
         distance_matrix=distance_matrix_between_client_vehicles_and_server_vehicles,
@@ -199,7 +174,7 @@ def best_k_offloading_node_matching(
         path_loss_exponent=path_loss_exponent,
     )
     
-    for _ in range(client_vehicle_num * k_offloading_node):
+    for _ in range(client_vehicle_num * k_offloading_node_num):
         while True:
             if now_matching.is_stable():
                 break
@@ -242,7 +217,7 @@ def best_k_offloading_node_matching(
                 else:
                     raise ValueError("The type of partner of v2 is wrong.")
                 
-                updated_matching = now_matching.copy()
+                updated_matching = now_matching.deepcopy()
                 updated_matching.delete_matching_of_client_vehicle(blocking_pair[0])
                 updated_matching.delete_matching_of_client_vehicle(blocking_pair[1])
                 updated_matching.insert_matching((blocking_pair[0], partner_of_v2))
@@ -282,13 +257,19 @@ def best_k_offloading_node_matching(
                     raise ValueError("The type of partner of v2 is wrong.")
                 
                 if updated_v1_sinr > now_v1_sinr and updated_v2_sinr > now_v2_sinr:
-                    now_matching = updated_matching.copy()
+                    now_matching = updated_matching.deepcopy()
             break
             
         for client_vehicle_index in range(client_vehicle_num):
-            best_k_nodes[client_vehicle_index].append(now_matching.get_matching_partner_of_client_vehicle(client_vehicle_index))
+            matching_partner = now_matching.get_matching_partner_of_client_vehicle(client_vehicle_index)
+            if matching_partner["type"] == "server_vehicle":
+                best_k_nodes[client_vehicle_index][matching_partner["id"]] = 1
+            elif matching_partner["type"] == "edge_node":
+                best_k_nodes[client_vehicle_index][server_vehicle_num + matching_partner["id"]] = 1
+            else:
+                raise ValueError("The type of matching partner is wrong.")
             
-        now_matching = init_matching.copy()
+        now_matching = init_matching.deepcopy()
         for client_vehicle_index in range(client_vehicle_num):
             random_number = np.random.rand()
             if random_number < random_change_matching_probability:

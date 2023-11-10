@@ -23,6 +23,9 @@ class task(object):
     def get_deadline(self) -> float:
         return self._deadline
     
+    def get_requested_computing_resources(self) -> float:
+        return self._cqu_cycles * self._input_data_size / self._deadline
+    
     def __str__(self) -> str:
         return "Input data size: " + str(self._input_data_size) + "\nCqu cycles: " + str(self._cqu_cycles) + "\nDeadline: " + str(self._deadline)
         
