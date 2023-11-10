@@ -88,14 +88,14 @@ class vehicle(object):
             self._available_storage_capability[i] = self._available_storage_capability[i] - consumed_storage_capability
         return None
     
-    def generate_task(self) -> List[Tuple]:
+    def generate_task(self) -> List[Tuple]:             # 注意设置任务的大小
         '''each vehicle generate tasks according to a Poission distribution with arrival rate'''
         tasks : List[Tuple] = []
         task_arrival_times = np.random.poisson(self._task_arrival_rate, self._time_slot_num)
         for i in range(self._time_slot_num):
             if task_arrival_times[i] > 0:
                 for _ in range(task_arrival_times[i]):
-                    tasks.append((i, random.choices(range(self._task_num), k=1)[0]))
+                    tasks.append((i, random.choices(range(self._task_num), k=1)[0]))            
         return tasks
     
     def __str__(self, now) -> str:

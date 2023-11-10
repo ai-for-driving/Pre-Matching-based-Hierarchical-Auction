@@ -3,7 +3,8 @@ class buyer(object):
     def __init__(
         self,
         buyer_type: str,     #  e.g., "vehicle", "edge node"
-        index: int,    #  the index of vehicle or edge node 
+        index: int,    #  the index of vehicle or edge node
+        vehicle_indexs: list,    #  the indexs of vehicles
         time_slot_index: int,
         requested_computing_resources: float,
         requested_storage_resources: float,
@@ -12,6 +13,7 @@ class buyer(object):
     ) -> None:
         self._type = buyer_type
         self._index = index
+        self._vehicle_indexs = vehicle_indexs
         self._time_slot_index = time_slot_index
         self._requested_computing_resources = requested_computing_resources
         self._requested_storage_resources = requested_storage_resources
@@ -39,6 +41,9 @@ class buyer(object):
     def get_payment(self) -> float:
         return self._payment
     
+    def get_vehicle_indexs(self) -> list:
+        return self._vehicle_indexs
+    
     def set_type(self, buyer_type: str) -> None:
         self._type = buyer_type
         
@@ -60,10 +65,14 @@ class buyer(object):
     def set_payment(self, payment: float) -> None:
         self._payment = payment
         
+    def set_vehicle_indexs(self, vehicle_indexs: list) -> None:
+        self._vehicle_indexs = vehicle_indexs
+        
     def __str__(self) -> str:
-        return "Buyer type: {}, index: {}, time slot index: {}, requested computing resources: {}, requested storage resources: {}, bid: {}, payment: {}".format(
+        return "Buyer type: {}, index: {}, vehicle_index: {}, time slot index: {}, requested computing resources: {}, requested storage resources: {}, bid: {}, payment: {}".format(
             self._type,
             self._index,
+            self._vehicle_indexs,
             self._time_slot_index,
             self._requested_computing_resources,
             self._requested_storage_resources,
