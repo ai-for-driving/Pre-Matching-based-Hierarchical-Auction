@@ -1,4 +1,4 @@
-class buyer(object):
+class auction_buyer(object):
     
     def __init__(
         self,
@@ -81,7 +81,7 @@ class buyer(object):
         )
 
 
-class seller(object):
+class auction_seller(object):
     
     def __init__(
         self,

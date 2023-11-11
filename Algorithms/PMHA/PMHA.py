@@ -1,36 +1,28 @@
 from typing import List
 import numpy as np
-from player import buyer, seller
 from Objectives.task import task
 from Objectives.vehicle import vehicle
 from Objectives.edge_node import edge_node
 from Objectives.cloud_server import cloud_server
 from Strategy.strategy import action
-from best_k_matching import init_preference_list, best_k_offloading_node_matching, get_connection_time_of_vehicles_under_V2V_communication_range, get_connection_time_of_vehicle_under_V2I_communication_range
-from vehicle_edge_auction import init_buyers_and_sellers_at_vehicle_edge_auction, init_bids_and_asks_of_vehicle_edge_auction, resource_allocation_and_pricing
-from edge_cloud_auction import init_buyers_and_sellers_at_edge_cloud_auction, init_bids_and_asks_of_edge_cloud_auction, find_key_index, resource_allocation_of_edge_cloud_auction, payment_pricing
+from Algorithms.PMHA.best_k_matching import init_preference_list, best_k_offloading_node_matching, get_connection_time_of_vehicles_under_V2V_communication_range, get_connection_time_of_vehicle_under_V2I_communication_range
+from Algorithms.PMHA.vehicle_edge_auction import init_buyers_and_sellers_at_vehicle_edge_auction, init_bids_and_asks_of_vehicle_edge_auction, resource_allocation_and_pricing
+from Algorithms.PMHA.edge_cloud_auction import init_buyers_and_sellers_at_edge_cloud_auction, init_bids_and_asks_of_edge_cloud_auction, find_key_index, resource_allocation_of_edge_cloud_auction, payment_pricing
 
-class PMHA(object):
+class PMHA_agent(object):
     
     def __init__(
         self,
-        client_vehicle_number: int,
-        server_vehicle_number: int,
-        edge_node_number: int,
-        cloud_server_number: int,
         k_offloading_node_num: int,
         random_change_matching_probability: float,
         path_loss_exponent: int,
+        white_gaussian_noise: float,
     ) -> None:
         self._k_offloading_node_num = k_offloading_node_num
         self._random_change_matching_probability = random_change_matching_probability
         self._path_loss_exponent = path_loss_exponent
-        self._action = action(
-            client_vehicle_number=client_vehicle_number,
-            server_vehicle_number=server_vehicle_number,
-            edge_node_number=edge_node_number,
-            cloud_server_number=cloud_server_number,
-        )
+        self._white_gaussian_noise = white_gaussian_noise
+        self._action = None
 
     def generate_action(
         self,
@@ -45,6 +37,13 @@ class PMHA(object):
         vehicles_under_V2V_communication_range: np.ndarray,
         vehicles_under_V2I_communication_range: np.ndarray,
     ) -> action:
+        
+        self._action = action(
+            client_vehicle_number=len(client_vehicles),
+            server_vehicle_number=len(server_vehicles),
+            edge_node_number=len(edge_nodes),
+            cloud_node_number=1,
+        )
         
         connection_time_of_vehicles_under_V2V_communication_range = get_connection_time_of_vehicles_under_V2V_communication_range(
             distance_matrix=distance_matrix_between_client_vehicles_and_server_vehicles,
@@ -82,8 +81,8 @@ class PMHA(object):
             preference_list=preference_list,
             random_change_matching_probability=self._random_change_matching_probability,
             path_loss_exponent=self._path_loss_exponent,
+            white_gaussian_noise=self._white_gaussian_noise,
         )
-        
         
         self._action, vehicle_edge_auction_buyer_list, vehicle_edge_auction_seller_list = init_buyers_and_sellers_at_vehicle_edge_auction(
             client_vehicles=client_vehicles,
@@ -94,6 +93,15 @@ class PMHA(object):
             best_k_nodes=best_k_nodes,
             now=now,
         )
+        
+        is_vehicle_edge_auction_seller_list_all_empty = True
+        for vehicle_edge_auction_sellers in vehicle_edge_auction_seller_list:
+            if vehicle_edge_auction_sellers != []:
+                is_vehicle_edge_auction_seller_list_all_empty = False
+                break
+            
+        if is_vehicle_edge_auction_seller_list_all_empty:
+            return self._action
         
         vehicle_edge_auction_buyer_list, vehicle_edge_auction_seller_list = init_bids_and_asks_of_vehicle_edge_auction(
             buyers_list=vehicle_edge_auction_buyer_list,
@@ -108,6 +116,14 @@ class PMHA(object):
             sellers_list=vehicle_edge_auction_seller_list,
             action=self._action,
         )
+        
+        is_edge_cloud_auction_seller_list_all_empty = True
+        for vehicle_edge_auction_sellers in vehicle_edge_auction_seller_list:
+            if vehicle_edge_auction_sellers != []:
+                is_edge_cloud_auction_seller_list_all_empty = False
+                break
+        if is_edge_cloud_auction_seller_list_all_empty:
+            return self._action
         
         self._action, edge_cloud_auction_buyers, edge_cloud_auction_sellers = init_buyers_and_sellers_at_edge_cloud_auction(
             client_vehicles=client_vehicles,

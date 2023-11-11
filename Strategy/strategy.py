@@ -217,7 +217,7 @@ class action(object):
     
     def get_new_server_vehicle_index(self, server_vehicle_index: int) -> int:
         if server_vehicle_index > self._server_vehicle_number or server_vehicle_index < 0:
-            raise Exception("Invalid server vehicle index")
+            raise Exception("Invalid server vehicle index, server_vehicle_index: " + str(server_vehicle_index) + ", self._server_vehicle_number: " + str(self._server_vehicle_number))
         return server_vehicle_index + 1
     
     def get_new_edge_node_index(self, edge_node_index: int) -> int:

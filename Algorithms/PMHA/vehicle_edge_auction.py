@@ -1,6 +1,6 @@
 from typing import List
 import numpy as np
-from player import buyer, seller
+from Algorithms.PMHA.player import auction_buyer, auction_seller
 from Objectives.task import task
 from Objectives.vehicle import vehicle
 from Objectives.edge_node import edge_node
@@ -14,55 +14,60 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
     action: action,
     best_k_nodes: np.ndarray,
     now: int,
-) -> tuple[action, List[List[buyer]], List[List[seller]]]:
+) -> tuple[action, List[List[auction_buyer]], List[List[auction_seller]]]:
     buyers = list()
     sellers = list()
-    output_action = action.deepcopy()
-    for client_vehicle in client_vehicles:
+    output_action = action
+    for client_vehicle_index in range(len(client_vehicles)):
+        client_vehicle = client_vehicles[client_vehicle_index]
         tasks_list = client_vehicle.get_tasks_by_time(now=now)
         requested_computing_resources = 0
         requested_storage_resources = 0
         for task_tuple in tasks_list:
             requested_computing_resources += tasks[task_tuple[1]].get_requested_computing_resources()
             requested_storage_resources += tasks[task_tuple[1]].get_input_data_size()
-        if requested_computing_resources <= client_vehicle.get_available_computing_capability() and \
-            requested_storage_resources <= client_vehicle.get_available_storage_capability():
+        if requested_computing_resources <= client_vehicle.get_available_computing_capability(now=now) and \
+            requested_storage_resources <= client_vehicle.get_available_storage_capability(now=now):
             output_action.set_offloading_decision_at_local(
-                client_vehicle_index=client_vehicle.get_index(),
+                client_vehicle_index=client_vehicle_index,
                 offloading_decision=1,
             )
             output_action.set_computing_resource_decision_at_local(
-                client_vehicle_index=client_vehicle.get_index(),
-                computing_resource_decision=requested_computing_resources / client_vehicle.get_available_computing_capability(),
+                client_vehicle_index=client_vehicle_index,
+                computing_resource_decision=requested_computing_resources / client_vehicle.get_available_computing_capability(now=now),
             )
             continue
-        buyers.append(buyer(
+        
+        buyers.append(auction_buyer(
             buyer_type="vehicle",
-            index=client_vehicle.get_index(),
-            vehicle_indexs=client_vehicle.get_index(),
+            index=client_vehicle_index,
+            vehicle_indexs=client_vehicle_index,
             time_slot_index=now,
             requested_computing_resources=requested_computing_resources,
             requested_storage_resources=requested_storage_resources,
             bid=0,
             payment=0,
         ))
-    for server_vehicle in server_vehicles:
-        sellers.append(seller(
+    
+    for server_vehicle_index in range(len(server_vehicles)):
+        server_vehicle = server_vehicles[server_vehicle_index]
+        sellers.append(auction_seller(
             seller_type="server_vehicle",
-            index=server_vehicle.get_index(),
+            index=server_vehicle_index,
             time_slot_index=now,
-            offered_computing_resources=server_vehicle.get_available_computing_capability(),
-            offered_storage_resources=server_vehicle.get_available_storage_capability(),
+            offered_computing_resources=server_vehicle.get_available_computing_capability(now=now),
+            offered_storage_resources=server_vehicle.get_available_storage_capability(now=now),
             ask=0,
             payment=0,
         ))
-    for edge_node in edge_nodes:
-        sellers.append(seller(
+    for edge_node_index in range(len(edge_nodes)):
+        edge_node = edge_nodes[edge_node_index]
+        sellers.append(auction_seller(
             seller_type="edge_node",
-            index=edge_node.get_index(),
+            index=edge_node_index,
             time_slot_index=now,
-            offered_computing_resources=edge_node.get_available_computing_capability(),
-            offered_storage_resources=edge_node.get_available_storage_capability(),
+            offered_computing_resources=edge_node.get_available_computing_capability(now=now),
+            offered_storage_resources=edge_node.get_available_storage_capability(now=now),
             ask=0,
             payment=0,
         ))
@@ -110,9 +115,9 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
     
 
 def init_bids_and_asks_of_vehicle_edge_auction(
-    buyers_list: List[List[buyer]],
-    sellers_list: List[List[seller]],
-) -> List[tuple[List[buyer], List[seller]]]:
+    buyers_list: List[List[auction_buyer]],
+    sellers_list: List[List[auction_seller]],
+) -> List[tuple[List[auction_buyer], List[auction_seller]]]:
     for i in range(len(buyers_list)):
         buyers = buyers_list[i]
         sellers = sellers_list[i]
@@ -136,13 +141,13 @@ def resource_allocation_and_pricing(
     client_vehicle_number: int,
     server_vehicle_number: int,
     edge_node_number: int,
-    buyers_list: List[List[buyer]],
-    sellers_list: List[List[seller]],
+    buyers_list: List[List[auction_buyer]],
+    sellers_list: List[List[auction_seller]],
     action: action,
-) -> tuple[action, np.ndarray, List[List[buyer]], List[List[seller]]]:
-    output_buyers_list = buyers_list.deepcopy()
-    output_sellers_list = sellers_list.deepcopy()
-    output_action = action.deepcopy()
+) -> tuple[action, np.ndarray, List[List[auction_buyer]], List[List[auction_seller]]]:
+    output_buyers_list = buyers_list
+    output_sellers_list = sellers_list
+    output_action = action
     offloading_decision = np.zeros((client_vehicle_number, server_vehicle_number + edge_node_number))
     for seller_index in range(len(output_sellers_list)):
         buyers = output_buyers_list[seller_index]

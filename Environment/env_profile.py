@@ -45,6 +45,7 @@ class env_profile(object):
         V2V_bandwidth: float,
         V2I_bandwidth: float,
         white_gaussian_noise: float,
+        path_loss_exponent: int,
     ) -> None:
         self._slot_length: int = slot_length
         self._task_num: int = task_num
@@ -90,7 +91,7 @@ class env_profile(object):
         self._V2V_bandwidth: float = V2V_bandwidth
         self._V2I_bandwidth: float = V2I_bandwidth
         self._white_gaussian_noise: float = white_gaussian_noise
-        self._path_loss_exponent: int = 3
+        self._path_loss_exponent: int = path_loss_exponent
         
     def get_slot_length(self) -> int:
         return self._slot_length
