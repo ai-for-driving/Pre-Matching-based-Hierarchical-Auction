@@ -1,6 +1,6 @@
 from typing import List
 import numpy as np
-from player import buyer, seller
+from Algorithms.PMHA.player import auction_buyer, auction_seller
 from Objectives.task import task
 from Objectives.vehicle import vehicle
 from Objectives.edge_node import edge_node
@@ -15,14 +15,15 @@ def init_buyers_and_sellers_at_edge_cloud_auction(
     offloading_decision: np.ndarray,  # client vehicle index * (1 + server_vehicle_number + edge_node_number + cloud_node_number)
     action: action,
     now: int,
-) -> tuple[action, List[buyer], List[seller]]:
+) -> tuple[action, List[auction_buyer], List[auction_seller]]:
     buyers = list()
     sellers = list()
-    output_action = action.deepcopy()
-    for edge_node in edge_nodes:
+    output_action = action
+    for edge_node_index in range(len(edge_nodes)):
+        edge_node = edge_nodes[edge_node_index]
         tasks_tuple_list = list()
         for client_vehicle_index in range(len(client_vehicles)):
-            if offloading_decision[client_vehicle_index][edge_node.get_index()] == 1:
+            if offloading_decision[client_vehicle_index][edge_node_index] == 1:
                 tasks_list = client_vehicles[client_vehicle_index].get_tasks_by_time(now=now)
                 for task_tuple in tasks_list:
                     tasks_tuple_list.append((client_vehicle_index, task_tuple[1]))
@@ -38,12 +39,12 @@ def init_buyers_and_sellers_at_edge_cloud_auction(
                 tasks[task_tuple[1]].get_input_data_size() < edge_node.get_available_storage_capability(now=now):
                 output_action.set_offloading_decision_of_vehicle_to_edge_node(
                     client_vehicle_index=task_tuple[0],
-                    edge_node_index=edge_node.get_index(),
+                    edge_node_index=edge_node_index,
                     offloading_decision=1,
                 )
                 output_action.set_computing_resource_decision_of_vehicle_to_edge_node(
                     client_vehicle_index=task_tuple[0],
-                    edge_node_index=edge_node.get_index(),
+                    edge_node_index=edge_node_index,
                     computing_resource_decision=tasks[task_tuple[1]].get_requested_computing_resources() / edge_node.get_available_computing_capability(now=now),
                 )
                 requested_computing_resources -= tasks[task_tuple[1]].get_requested_computing_resources()
@@ -51,20 +52,20 @@ def init_buyers_and_sellers_at_edge_cloud_auction(
             else:
                 output_action.set_offloading_decision_of_vehicle_to_edge_node(
                     client_vehicle_index=task_tuple[0],
-                    edge_node_index=edge_node.get_index(),
+                    edge_node_index=edge_node_index,
                     offloading_decision=0,
                 )
                 output_action.set_computing_resource_decision_of_vehicle_to_edge_node(
                     client_vehicle_index=task_tuple[0],
-                    edge_node_index=edge_node.get_index(),
+                    edge_node_index=edge_node_index,
                     computing_resource_decision=0,
                 )
                 vehicle_indexs.append(task_tuple[0])
         
         if requested_computing_resources > 0 and requested_storage_resources > 0:
-            buyers.append(buyer(
+            buyers.append(auction_buyer(
                 buyer_type="edge_node",
-                index=edge_node.get_index(),
+                index=edge_node_index,
                 vehicle_indexs=vehicle_indexs,
                 time_slot_index=now,
                 requested_computing_resources=requested_computing_resources,
@@ -73,7 +74,7 @@ def init_buyers_and_sellers_at_edge_cloud_auction(
                 payment=0,
             ))
     
-    sellers.append(seller(
+    sellers.append(auction_seller(
         seller_type="cloud",
         index=0,
         time_slot_index=now,
@@ -86,9 +87,9 @@ def init_buyers_and_sellers_at_edge_cloud_auction(
     return output_action, buyers, sellers
 
 def init_bids_and_asks_of_edge_cloud_auction(
-    buyers: List[buyer],
-    sellers: List[seller],
-) -> tuple[List[buyer], List[seller]]:
+    buyers: List[auction_buyer],
+    sellers: List[auction_seller],
+) -> tuple[List[auction_buyer], List[auction_seller]]:
     buyer_num = len(buyers)
     random_bids = np.random.uniform(0, 1, buyer_num)
     for buyer in buyers:
@@ -104,8 +105,8 @@ def init_bids_and_asks_of_edge_cloud_auction(
     return sorted_buyers, sorted_sellers
 
 def find_key_index(
-    sorted_buyers: List[buyer],
-    sorted_sellers: List[seller],
+    sorted_buyers: List[auction_buyer],
+    sorted_sellers: List[auction_seller],
 ) -> tuple[int, int]:
     max_buyer_number = 0
     buyer_key_index = 0
@@ -140,13 +141,13 @@ def find_key_index(
     return buyer_key_index, seller_key_index
 
 def resource_allocation_of_edge_cloud_auction(
-    sorted_buyers: List[buyer],
-    sorted_sellers: List[seller],
+    sorted_buyers: List[auction_buyer],
+    sorted_sellers: List[auction_seller],
     buyer_key_index: int,
     seller_key_index: int,
     action: action,
 ) -> tuple[action, np.ndarray]: 
-    output_action = action.deepcopy()
+    output_action = action
     new_buyers = sorted_buyers[0:buyer_key_index + 1]
     new_sellers = sorted_sellers[0:seller_key_index + 1]
     
@@ -200,14 +201,14 @@ def resource_allocation_of_edge_cloud_auction(
     return output_action, offloading_decision
 
 def payment_pricing(
-    buyers: List[buyer],
-    sellers: List[seller],
+    buyers: List[auction_buyer],
+    sellers: List[auction_seller],
     buyer_key_index: int,
     seller_key_index: int,
     offloading_decision: np.ndarray,
-) -> tuple[List[buyer], List[seller]]:
-    output_buyers = buyers.deepcopy()
-    output_sellers = sellers.deepcopy()
+) -> tuple[List[auction_buyer], List[auction_seller]]:
+    output_buyers = buyers
+    output_sellers = sellers
     for buyer in output_buyers:
         if offloading_decision[buyer.get_index()].sum() == 1:
             bid_high = buyer.get_bid()

@@ -2,7 +2,7 @@ from typing import List
 import numpy as np
 from Objectives.vehicle import vehicle
 from Objectives.edge_node import edge_node
-from matching_object import matching
+from Algorithms.PMHA.matching_object import matching
 from Utilities.distance_and_coverage import calculate_distance
 from Utilities.noma import obtain_channel_gains_between_client_vehicle_and_server_vehicles, obtain_channel_gains_between_vehicles_and_edge_nodes
 
@@ -146,6 +146,7 @@ def best_k_offloading_node_matching(
     preference_list: List[List[dict]],
     random_change_matching_probability: float,
     path_loss_exponent: int,
+    white_gaussian_noise: float,
 ) -> np.ndarray:
     # Initialization
     client_vehicle_num = len(client_vehicles)
@@ -153,13 +154,26 @@ def best_k_offloading_node_matching(
     edge_node_num = len(edge_nodes)
 
     init_matching = matching(
+        client_vehicles=client_vehicles,
         client_vehicle_num=client_vehicle_num,
+        server_vehicle_num=server_vehicle_num,
+        edge_node_num=edge_node_num,
+        white_gaussian_noise=white_gaussian_noise,
         preference_list=preference_list,
     )
     
     best_k_nodes = np.zeros((client_vehicle_num, server_vehicle_num + edge_node_num))
     
-    now_matching = init_matching.deepcopy()
+    now_matching = matching(
+        client_vehicles=client_vehicles,
+        client_vehicle_num=client_vehicle_num,
+        server_vehicle_num=server_vehicle_num,
+        edge_node_num=edge_node_num,
+        white_gaussian_noise=white_gaussian_noise,
+        preference_list=preference_list,
+    )
+    
+    now_matching = init_matching
     
     channel_gains_between_client_vehicle_and_server_vehicles = obtain_channel_gains_between_client_vehicle_and_server_vehicles(
         distance_matrix=distance_matrix_between_client_vehicles_and_server_vehicles,
@@ -217,7 +231,17 @@ def best_k_offloading_node_matching(
                 else:
                     raise ValueError("The type of partner of v2 is wrong.")
                 
-                updated_matching = now_matching.deepcopy()
+                updated_matching = matching(
+                    client_vehicles=client_vehicles,
+                    client_vehicle_num=client_vehicle_num,
+                    server_vehicle_num=server_vehicle_num,
+                    edge_node_num=edge_node_num,
+                    white_gaussian_noise=white_gaussian_noise,
+                    preference_list=preference_list,
+                )
+                
+                updated_matching = now_matching
+                
                 updated_matching.delete_matching_of_client_vehicle(blocking_pair[0])
                 updated_matching.delete_matching_of_client_vehicle(blocking_pair[1])
                 updated_matching.insert_matching((blocking_pair[0], partner_of_v2))
@@ -257,11 +281,14 @@ def best_k_offloading_node_matching(
                     raise ValueError("The type of partner of v2 is wrong.")
                 
                 if updated_v1_sinr > now_v1_sinr and updated_v2_sinr > now_v2_sinr:
-                    now_matching = updated_matching.deepcopy()
+                    
+                    now_matching = updated_matching
             break
             
         for client_vehicle_index in range(client_vehicle_num):
             matching_partner = now_matching.get_matching_partner_of_client_vehicle(client_vehicle_index)
+            if matching_partner is None:
+                continue
             if matching_partner["type"] == "server_vehicle":
                 best_k_nodes[client_vehicle_index][matching_partner["id"]] = 1
             elif matching_partner["type"] == "edge_node":
@@ -269,14 +296,16 @@ def best_k_offloading_node_matching(
             else:
                 raise ValueError("The type of matching partner is wrong.")
             
-        now_matching = init_matching.deepcopy()
+        now_matching = init_matching
         for client_vehicle_index in range(client_vehicle_num):
             random_number = np.random.rand()
             if random_number < random_change_matching_probability:
                 now_matching.delete_matching_of_client_vehicle(client_vehicle_index)
                 preference_list_number = len(preference_list[client_vehicle_index])
+                if preference_list_number == 0:
+                    continue
                 random_number = np.random.randint(0, preference_list_number)
-                now_matching.insert_matching(preference_list[client_vehicle_index][random_number])
+                now_matching.insert_matching((client_vehicle_index, preference_list[client_vehicle_index][random_number]))
         
     
     return best_k_nodes

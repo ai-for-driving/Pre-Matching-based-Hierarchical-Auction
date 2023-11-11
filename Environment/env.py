@@ -156,11 +156,41 @@ class env(object):
         
         return None
     
+    def get_now(self) -> int:
+        return self._now
+    
     def get_client_vehicle_num(self) -> int:
         return self._client_vehicle_num
     
     def get_server_vehicle_num(self) -> int:
         return self._server_vehicle_num
+    
+    def get_client_vehicles(self) -> List[vehicle]:
+        return self._client_vehicles
+    
+    def get_server_vehicles(self) -> List[vehicle]:
+        return self._server_vehicles
+    
+    def get_edge_nodes(self) -> List[edge_node]:
+        return self._edge_nodes
+    
+    def get_cloud(self) -> cloud_server:
+        return self._cloud
+    
+    def get_tasks(self) -> List[task]:
+        return self._tasks
+    
+    def get_distance_matrix_between_client_vehicles_and_server_vehicles(self) -> np.ndarray:
+        return self._distance_matrix_between_client_vehicles_and_server_vehicles
+    
+    def get_distance_matrix_between_client_vehicles_and_edge_nodes(self) -> np.ndarray:
+        return self._distance_matrix_between_client_vehicles_and_edge_nodes
+    
+    def get_vehicles_under_V2V_communication_range(self) -> np.ndarray:
+        return self._vehicles_under_V2V_communication_range
+    
+    def get_vehicles_under_V2I_communication_range(self) -> np.ndarray:
+        return self._vehicles_under_V2I_communication_range
     
     def step(self, now_action : action) -> None:
         if self._now > self._end_time:

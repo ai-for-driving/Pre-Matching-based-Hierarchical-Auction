@@ -34,7 +34,10 @@ class vehicle(object):
         self._task_arrival_rate : float = task_arrival_rate
         self._task_num : int = task_num
         self._tasks : List[Tuple] = self.generate_task()
-        
+    
+    def get_time_slot_num(self) -> int:
+        return self._time_slot_num
+    
     def get_mobilities(self) -> List[mobility]:
         return self._mobilities
     
