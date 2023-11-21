@@ -27,7 +27,7 @@ class env_profile(object):
         max_task_arrival_rate_of_vehicles: float,
         vehicle_distribution: str,
         edge_num: int,
-        I2I_transmission_rate: float,
+        I2I_transmission_rate: float,       # Mbps
         I2I_transmission_weight: float,
         min_computing_capability_of_edges: float,
         max_computing_capability_of_edges: float,
@@ -35,7 +35,6 @@ class env_profile(object):
         max_storage_capability_of_edges: float,
         min_communication_range_of_edges: float,
         max_communication_range_of_edges: float,
-        edge_mobility_file_name: str,
         edge_distribution: str,
         cloud_computing_capability: float,
         cloud_storage_capability: float,
@@ -79,7 +78,6 @@ class env_profile(object):
         self._max_storage_capability_of_edges: float = max_storage_capability_of_edges
         self._min_communication_range_of_edges: float = min_communication_range_of_edges
         self._max_communication_range_of_edges: float = max_communication_range_of_edges
-        self._edge_mobility_file_name: str = edge_mobility_file_name
         self._I2I_transmission_rate: float = I2I_transmission_rate
         self._I2I_transmission_weight: float = I2I_transmission_weight
         self._edge_distribution: str = edge_distribution
@@ -194,9 +192,6 @@ class env_profile(object):
     
     def get_I2I_transmission_weight(self) -> float:
         return self._I2I_transmission_weight
-    
-    def get_edge_mobility_file_name(self) -> str:
-        return self._edge_mobility_file_name
     
     def get_edge_distribution(self) -> str:
         return self._edge_distribution

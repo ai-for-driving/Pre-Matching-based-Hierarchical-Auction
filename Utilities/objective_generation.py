@@ -11,12 +11,12 @@ from Utilities.wired_bandwidth import get_wired_bandwidth_between_edge_nodes_and
 def generate_task_set(
     task_num: int,
     distribution: str,
-    min_input_data_size: float,
-    max_input_data_size: float,
-    min_cqu_cycles: float,
-    max_cqu_cycles: float,
-    min_deadline: float,
-    max_deadline: float,
+    min_input_data_size: float,     # in MB
+    max_input_data_size: float,     # in MB
+    min_cqu_cycles: float,          # cycles/bit
+    max_cqu_cycles: float,          # cycles/bit
+    min_deadline: float,            # seconds
+    max_deadline: float,            # seconds
 ):
     '''
     Generate a task set with given parameters
@@ -63,18 +63,18 @@ def generate_vehicles(
     filling_way: str,
     chunk_size: int,
     start_time: str,
-    min_computing_capability: float,
-    max_computing_capability: float,
-    min_storage_capability: float,
-    max_storage_capability: float,
-    min_transmission_power: float,
-    max_transmission_power: float,
-    communication_range: float,
-    min_task_arrival_rate: float,
-    max_task_arrival_rate: float,
+    min_computing_capability: float,        # GHz
+    max_computing_capability: float,        # GHz
+    min_storage_capability: float,          # MB
+    max_storage_capability: float,          # MB
+    min_transmission_power: float,          # mW
+    max_transmission_power: float,          # mW
+    communication_range: float,             # meters
+    min_task_arrival_rate: float,           # tasks/s
+    max_task_arrival_rate: float,           # tasks/s
     task_num: int,
     distribution: str,
-) -> List[vehicle]:
+) -> tuple[float, float, float, float, List[vehicle]]:
 
     trajectoriesProcessing = TrajectoriesProcessing(
         file_name_key=file_name_key,
@@ -85,7 +85,7 @@ def generate_vehicles(
         filling_way=filling_way,
         chunk_size=chunk_size,
     )
-    trajectoriesProcessing.processing()
+    min_map_x, max_map_x, min_map_y, max_map_y = trajectoriesProcessing.processing()
     
     mobilities_list : List[List[mobility]] = trajectoriesProcessing.get_vehicle_mobilities()
     
@@ -104,34 +104,28 @@ def generate_vehicles(
                     task_num=task_num,
                 )
             )
-        return vehicles
+        return min_map_x, max_map_x, min_map_y, max_map_y, vehicles
     else:
         raise Exception("distribution not supported")
     
     
 def generate_edge_nodes(
     edge_num: int,
-    file_name: str,
-    min_computing_capability: float,
-    max_computing_capability: float,
-    min_storage_capability: float,
-    max_storage_capability: float,
-    communication_range : float,
+    min_map_x: float,
+    max_map_x: float,
+    min_map_y: float,
+    max_map_y: float,
+    min_computing_capability: float,        # GHz   
+    max_computing_capability: float,        # GHz
+    min_storage_capability: float,          # MB
+    max_storage_capability: float,          # MB
+    communication_range : float,            # meters
     time_slot_num: int,
     distribution: str,
 ) -> List[edge_node]:
     edge_nodes = []
-    edge_node_x = []
-    edge_node_y = []
-    try:
-        with open(file_name, 'r') as f:
-            for line in f.readlines():
-                line = line.strip('\n')
-                line = line.split(',')
-                edge_node_x.append(float(line[0]))
-                edge_node_y.append(float(line[1]))
-    except:
-        raise Exception("No such file: " + file_name)
+    edge_node_x = [random.uniform(min_map_x, max_map_x) for _ in range(edge_num)]
+    edge_node_y = [random.uniform(min_map_y, max_map_y) for _ in range(edge_num)]
     if distribution == "uniform" :
         for _ in range(edge_num):
             mobility_obj = mobility(
@@ -157,12 +151,12 @@ def generate_edge_nodes(
         
         
 def generate_cloud(
-    computing_capability: float,
-    storage_capability: float,
+    computing_capability: float,        # GHz
+    storage_capability: float,          # MB
     edge_node_num: int,
     time_slot_num: int,
-    min_wired_bandwidth: float,
-    max_wired_bandwidth: float,
+    min_wired_bandwidth: float,         # Mbps
+    max_wired_bandwidth: float,         # Mbps
     distribution: str,
 ) -> cloud_server:
     if distribution == "uniform":

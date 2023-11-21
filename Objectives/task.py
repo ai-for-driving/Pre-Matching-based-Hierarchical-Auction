@@ -6,9 +6,9 @@ class task(object):
     '''
     def __init__(
         self,
-        input_data_size: float,
-        cqu_cycles: float,
-        deadline: float,
+        input_data_size: float,     # bits
+        cqu_cycles: float,          # cycles/bit
+        deadline: float,            # seconds
         ) -> None:
         self._input_data_size : float = input_data_size
         self._cqu_cycles : float = cqu_cycles
