@@ -55,7 +55,7 @@ class env(object):
             max_deadline=profile.get_max_deadline_of_tasks(),
         )
         
-        self._vehicles : List[vehicle] = generate_vehicles(
+        min_map_x, max_map_x, min_map_y, max_map_y, self._vehicles : List[vehicle] = generate_vehicles(
             vehicle_num=profile.get_vehicle_num(),
             slot_length=profile.get_slot_length(),
             file_name_key=profile.get_vehicle_mobility_file_name_key(),
@@ -78,6 +78,10 @@ class env(object):
         
         self._edge_nodes : List[edge_node] = generate_edge_nodes(
             edge_num=profile.get_edge_num(),
+            min_map_x=min_map_x,
+            max_map_x=max_map_x,
+            min_map_y=min_map_y,
+            max_map_y=max_map_y,
             file_name=profile.get_edge_mobility_file_name(),
             min_computing_capability=profile.get_min_computing_capability_of_edges(),
             max_computing_capability=profile.get_max_computing_capability_of_edges(),

@@ -30,6 +30,24 @@ def compute_transmission_rate(SINR, bandwidth) -> float:
     """
     return float(cover_MHz_to_Hz(bandwidth) * np.log2(1 + SINR))
 
+def cover_GHz_to_Hz(GHz: float) -> float:
+    return GHz * 1000000000
+
+def cover_Hz_to_GHz(Hz: float) -> float:
+    return Hz / 1000000000
+
+def cover_MB_to_bit(MB: float) -> float:
+    return MB * 1000000 * 8
+
+def cover_bit_to_MB(bit: float) -> float:
+    return bit / 1000000 / 8
+
+def cover_Mb_to_bit(Mb: float) -> float:
+    return Mb * 1000000
+
+def cover_bit_to_Mb(bit: float) -> float:
+    return bit / 1000000
+
 def cover_bps_to_Mbps(bps: float) -> float:
     return bps / 1000000
 
@@ -66,7 +84,7 @@ def obtain_wired_transmission_time(
     :param data_size: bit
     :return: transmission time measure by s
     """
-    return data_size / cover_Mbps_to_bps(transmission_rate)
+    return cover_MB_to_bit(data_size) / cover_Mbps_to_bps(transmission_rate)
 
 def obtain_transmission_time(transmission_rate, data_size) -> float:
     """
@@ -74,14 +92,14 @@ def obtain_transmission_time(transmission_rate, data_size) -> float:
     :param data_size: bit
     :return: transmission time measure by s
     """
-    return data_size / transmission_rate
+    return cover_MB_to_bit(data_size) / transmission_rate
 
 def obtain_computing_time(
     data_size: float,
     per_cycle_required: float,
     computing_capability: float
 ) -> float:
-    return data_size * per_cycle_required / computing_capability
+    return cover_MB_to_bit(data_size) * per_cycle_required / cover_GHz_to_Hz(computing_capability)
 
 
 def transform_str_data_time_into_timestamp(data_time: str) -> int:

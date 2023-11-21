@@ -34,6 +34,26 @@ class TrajectoriesProcessing(object):
         self._file_names['US-101-SanDiego-CA-1500feet-0805am-0820am'] = '/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/Trajectories_files/US-101-LosAngeles-CA-2100feet/us-101-vehicle-trajectory-data/vehicle-trajectory-data/0805am-0820am/trajectories-0805am-0820am.csv'
         self._file_names['US-101-SanDiego-CA-1500feet-0820am-0835am'] = '/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/Trajectories_files/US-101-LosAngeles-CA-2100feet/us-101-vehicle-trajectory-data/vehicle-trajectory-data/0820am-0835am/trajectories-0820am-0835am.csv'
         
+        self._start_times : dict = {}
+        self._end_times : dict = {}
+        self._start_times['I-80-Emeryville-CA-1650feet-0400pm-0415pm'] = '`2005-04-13 16:00:00`'
+        self._end_times['I-80-Emeryville-CA-1650feet-0400pm-0415pm'] = '2005-04-13 16:15:00'
+        
+        self._start_times['I-80-Emeryville-CA-1650feet-0500pm-0515pm'] = '2005-04-13 17:00:00'
+        self._end_times['I-80-Emeryville-CA-1650feet-0500pm-0515pm'] = '2005-04-13 17:15:00'
+        
+        self._start_times['I-80-Emeryville-CA-1650feet-0515pm-0530pm'] = '2005-04-13 17:15:00'
+        self._end_times['I-80-Emeryville-CA-1650feet-0515pm-0530pm'] = '2005-04-13 17:30:00'
+        
+        self._start_times['Lankershim-Boulevard-LosAngeles-CA-1600feet'] = '2005-06-16 08:30:00'
+        self._end_times['Lankershim-Boulevard-LosAngeles-CA-1600feet'] = '2005-06-16 09:00:00'
+        
+        # self._start_times['Peachtree-Street-Atlanta-GA-2100feet'] = '2006-11-08 16:00:00'
+        
+        # self._start_times['US-101-SanDiego-CA-1500feet-0750am-0805am'] = '2005-07-19 07:50:00'
+        # self._start_times['US-101-SanDiego-CA-1500feet-0805am-0820am'] = '2005-07-19 08:05:00'
+        # self._start_times['US-101-SanDiego-CA-1500feet-0820am-0835am'] = '2005-07-19 08:20:00'
+        
         self._file_name_key : str = file_name_key
         self._is_ms : bool = True
         
@@ -114,6 +134,10 @@ class TrajectoriesProcessing(object):
         self._filling_way = filling_way
         return None
     
+    def set_start_time(self, start_time: str) -> None:
+        self._start_time = start_time
+        return None
+    
     def obtain_start_end_time_stamp_ms(self) -> None:
         if self._is_ms:
             self._start_time_timestamp_ms = transform_str_data_time_into_timestamp_ms(self._start_time)
@@ -168,7 +192,21 @@ class TrajectoriesProcessing(object):
             self._min_global_time = self._all_data['Global_Time'].min()
         except:
             raise ValueError('file_name not found')
-        
+    
+    def read_all_csv(
+        self,
+    ) -> None:
+        try: 
+            # 使用迭代器逐块读取CSV文件
+            reader = pd.read_csv(self.get_file_name(), chunksize=self._chunk_size)
+
+            # 遍历每块数据
+            for chunk in reader:
+                self._all_data = pd.concat([self._all_data, chunk])
+
+            self._min_global_time = self._all_data['Global_Time'].min()
+        except:
+            raise ValueError('file_name not found')
     
     def get_all_data(self):
         return self._all_data
@@ -176,6 +214,8 @@ class TrajectoriesProcessing(object):
     def select_vehicles(
         self,
     ) -> None:
+        for vehicle_id, group in self._all_data.groupby('Vehicle_ID'):
+            self._vehicle_IDs.append(vehicle_id)
         # 选择车辆
         if self._slection_way == 'random':
             # 随机选择车辆
@@ -198,7 +238,7 @@ class TrajectoriesProcessing(object):
     
     def transfer_into_local_coordinates(
         self,
-    ) -> None:
+    ) -> Tuple[float, float, float, float]:
         groups = self._selected_data.groupby('Vehicle_ID')
         self._transfered_data = pd.DataFrame()
         for group in groups:
@@ -212,7 +252,11 @@ class TrajectoriesProcessing(object):
             sorted_group['v_Vel'] = sorted_group['v_Vel'] * 0.3048
             sorted_group['v_Acc'] = sorted_group['v_Acc'] * 0.3048
             self._transfered_data = pd.concat([self._transfered_data, sorted_group])
-        return None
+        min_map_x = self._transfered_data['Local_X'].min()
+        min_map_y = self._transfered_data['Local_Y'].min()
+        max_map_x = self._transfered_data['Local_X'].max()
+        max_map_y = self._transfered_data['Local_Y'].max()
+        return min_map_x, max_map_x, min_map_y, max_map_y
         
     def fill_missing_values(
         self,
@@ -222,13 +266,29 @@ class TrajectoriesProcessing(object):
             vehicle_mobility = []
             global_times = group[1]['Global_Time'].values
             # print("global_time", global_times)
+            direction = 0
+            try: 
+                direction = group[1]['Direction'].values[0]
+            except KeyError:
+                #  1-东行（EB），2-北行（NB），3-西行（WB），4-南行（SB）
+                local_x_difference = group[1]['Local_X'].values[len(global_times) - 1] - group[1]['Local_X'].values[0]
+                local_y_difference = group[1]['Local_Y'].values[len(global_times) - 1] - group[1]['Local_Y'].values[0]
+                if local_x_difference > 0 and local_x_difference > local_y_difference:
+                    direction = 1
+                elif local_y_difference > 0 and local_y_difference > local_x_difference:
+                    direction = 2
+                elif local_x_difference < 0 and - local_x_difference > local_y_difference:
+                    direction = 3
+                elif local_y_difference < 0 and - local_y_difference > local_x_difference:
+                    direction = 4
+                else:
+                    raise ValueError('direction not found')
             for i in range(len(global_times)):
                 global_time = global_times[i]
                 local_x = group[1]['Local_X'].values[i]
                 local_y = group[1]['Local_Y'].values[i]
                 v_vel = group[1]['v_Vel'].values[i]
                 v_acc = group[1]['v_Acc'].values[i]
-                direction = group[1]['Direction'].values[i]
                 if self._is_ms and global_time % 1000 == 0:
                     global_time = int(global_time / 1000)
                     vehicle_mobility.append(
@@ -257,11 +317,57 @@ class TrajectoriesProcessing(object):
         if self._filling_way == 'linear':
             for vehicle_index in range(len(self._vehicle_mobilities)):
                 mobility_index = 0
-                while mobility_index != self._slot_time_length:
+                while mobility_index <= self._slot_time_length - 1:
                     # print("\nmobility_index", mobility_index)
                     # print("\nlen(self._vehicle_mobilities[vehicle_index]", len(self._vehicle_mobilities[vehicle_index]))
-                    if self._vehicle_mobilities[vehicle_index][mobility_index].get_time() \
+                    if mobility_index == 0 and self._vehicle_mobilities[vehicle_index][mobility_index].get_time() != 0:
+                        print("\nCase 1")
+                        time_difference = self._vehicle_mobilities[vehicle_index][mobility_index].get_time()
+                        local_x_difference = (self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_x() - 
+                            self._vehicle_mobilities[vehicle_index][mobility_index].get_x()) / \
+                            (self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_time() -
+                            self._vehicle_mobilities[vehicle_index][mobility_index].get_time()) * \
+                            time_difference
+                        local_y_difference = (self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_y() -
+                            self._vehicle_mobilities[vehicle_index][mobility_index].get_y()) / \
+                            (self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_time() -
+                            self._vehicle_mobilities[vehicle_index][mobility_index].get_time()) * \
+                            time_difference
+                        speed_difference = (self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_speed() -
+                            self._vehicle_mobilities[vehicle_index][mobility_index].get_speed()) / \
+                            (self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_time() -
+                            self._vehicle_mobilities[vehicle_index][mobility_index].get_time()) * \
+                            time_difference
+                        acceleration_difference = (self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_acceleration() -
+                            self._vehicle_mobilities[vehicle_index][mobility_index].get_acceleration()) / \
+                            (self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_time() -
+                            self._vehicle_mobilities[vehicle_index][mobility_index].get_time()) * \
+                            time_difference
+                        direction = self._vehicle_mobilities[vehicle_index][mobility_index].get_direction()
+                        for i in range(time_difference):
+                            local_x = self._vehicle_mobilities[vehicle_index][mobility_index].get_x() + \
+                                local_x_difference / time_difference * (i + 1)
+                            local_y = self._vehicle_mobilities[vehicle_index][mobility_index].get_y() + \
+                                local_y_difference / time_difference * (i + 1)
+                            speed = self._vehicle_mobilities[vehicle_index][mobility_index].get_speed() + \
+                                speed_difference / time_difference * (i + 1)
+                            acceleration = self._vehicle_mobilities[vehicle_index][mobility_index].get_acceleration() + \
+                                acceleration_difference / time_difference * (i + 1)
+                            self._vehicle_mobilities[vehicle_index].insert(i, \
+                                mobility(
+                                    x=local_x,
+                                    y=local_y,
+                                    speed=speed,
+                                    acceleration=acceleration,
+                                    direction=direction,
+                                    time=i,
+                                )
+                            )
+                        mobility_index = mobility_index + time_difference + 1
+                    elif mobility_index != len(self._vehicle_mobilities[vehicle_index]) - 1 and \
+                        self._vehicle_mobilities[vehicle_index][mobility_index].get_time() \
                         != self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_time() - 1:
+                        print("\nCase 2")                        
                         time_difference = self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_time() - \
                             self._vehicle_mobilities[vehicle_index][mobility_index].get_time() - 1
                         local_x_difference = self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_x() - \
@@ -294,23 +400,88 @@ class TrajectoriesProcessing(object):
                                 )
                             )
                         mobility_index = mobility_index + time_difference + 1
-                    
+                    elif mobility_index == len(self._vehicle_mobilities[vehicle_index]) - 1 and \
+                        self._vehicle_mobilities[vehicle_index][mobility_index].get_time() != self._slot_time_length - 1:
+                        print("\nCase 3")
+                        time_difference = self._slot_time_length - self._vehicle_mobilities[vehicle_index][mobility_index].get_time() - 1
+                        local_x_difference = (self._vehicle_mobilities[vehicle_index][mobility_index].get_x() - \
+                            self._vehicle_mobilities[vehicle_index][mobility_index - 1].get_x()) / \
+                            (self._vehicle_mobilities[vehicle_index][mobility_index].get_time() - \
+                            self._vehicle_mobilities[vehicle_index][mobility_index - 1].get_time()) * \
+                            time_difference
+                        local_y_difference = (self._vehicle_mobilities[vehicle_index][mobility_index].get_y() - \
+                            self._vehicle_mobilities[vehicle_index][mobility_index - 1].get_y()) / \
+                            (self._vehicle_mobilities[vehicle_index][mobility_index].get_time() - \
+                            self._vehicle_mobilities[vehicle_index][mobility_index - 1].get_time()) * \
+                            time_difference
+                        speed_difference = (self._vehicle_mobilities[vehicle_index][mobility_index].get_speed() - \
+                            self._vehicle_mobilities[vehicle_index][mobility_index - 1].get_speed()) / \
+                            (self._vehicle_mobilities[vehicle_index][mobility_index].get_time() - \
+                            self._vehicle_mobilities[vehicle_index][mobility_index - 1].get_time()) * \
+                            time_difference
+                        acceleration_difference = (self._vehicle_mobilities[vehicle_index][mobility_index].get_acceleration() - \
+                            self._vehicle_mobilities[vehicle_index][mobility_index - 1].get_acceleration()) / \
+                            (self._vehicle_mobilities[vehicle_index][mobility_index].get_time() - \
+                            self._vehicle_mobilities[vehicle_index][mobility_index - 1].get_time()) * \
+                            time_difference
+                        direction = self._vehicle_mobilities[vehicle_index][mobility_index].get_direction()
+                        for i in range(time_difference):
+                            local_x = self._vehicle_mobilities[vehicle_index][mobility_index].get_x() + \
+                                local_x_difference / time_difference * (i + 1)
+                            local_y = self._vehicle_mobilities[vehicle_index][mobility_index].get_y() + \
+                                local_y_difference / time_difference * (i + 1)
+                            speed = self._vehicle_mobilities[vehicle_index][mobility_index].get_speed() + \
+                                speed_difference / time_difference * (i + 1)
+                            acceleration = self._vehicle_mobilities[vehicle_index][mobility_index].get_acceleration() + \
+                                acceleration_difference / time_difference * (i + 1)
+                            self._vehicle_mobilities[vehicle_index].insert(mobility_index + 1 + i, \
+                                mobility(
+                                    x=local_x,
+                                    y=local_y,
+                                    speed=speed,
+                                    acceleration=acceleration,
+                                    direction=direction,
+                                    time=self._vehicle_mobilities[vehicle_index][mobility_index].get_time() + i + 1,
+                                )
+                            )
+                        mobility_index = mobility_index + time_difference + 1
+                    elif self._vehicle_mobilities[vehicle_index][mobility_index].get_time() != self._slot_time_length - 1 and \
+                        self._vehicle_mobilities[vehicle_index][mobility_index].get_time() == self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_time() - 1:
+                        mobility_index = mobility_index + 1
+                    elif self._vehicle_mobilities[vehicle_index][mobility_index].get_time() == self._slot_time_length - 1:
+                        mobility_index = mobility_index + 1
+                    else:
+                        print("\nCase 4")
+                        print("mobility_index", mobility_index)
+                        print("len(self._vehicle_mobilities[vehicle_index]) - 1", len(self._vehicle_mobilities[vehicle_index]) - 1)
+                        print("self._vehicle_mobilities[vehicle_index][mobility_index].get_time()", self._vehicle_mobilities[vehicle_index][mobility_index].get_time())
+                        print("self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_time()", self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_time())
+                        print("*" * 100)
         else:
             raise ValueError('filling_way not found')
         
         return None
     
-    def processing(self):
+    def processing(
+        self
+    ) -> Tuple[float, float, float, float]:
         self.read_csv()
+        # print("read_csv finished")
         self.select_vehicles()
-        self.transfer_into_local_coordinates()
+        # print("select_vehicles finished")
+        min_map_x, max_map_x, min_map_y, max_map_y = self.transfer_into_local_coordinates()
+        # print("transfer_into_local_coordinates finished")
         self.fill_missing_values()
+        # print("fill_missing_values finished")
+        # self.print_analysis(self._transfered_data)
+        return min_map_x, max_map_x, min_map_y, max_map_y
 
     def print_analysis(
         self,
+        data: pd.DataFrame,
     ) -> None: 
         # 计算统计信息
-        stats = self._all_data.groupby('Vehicle_ID').agg({
+        stats = data.groupby('Vehicle_ID').agg({
             'Local_X': ['min', 'max'],
             'Local_Y': ['min', 'max'],
             'Global_Time': 'count',
@@ -326,7 +497,7 @@ class TrajectoriesProcessing(object):
         print(stats)
 
         # 遍历所有车辆的轨迹数据并绘制轨迹
-        for vehicle_id, group in self._all_data.groupby('Vehicle_ID'):
+        for vehicle_id, group in data.groupby('Vehicle_ID'):
             plt.plot(group['Local_X'], group['Local_Y'], label=f'Car {vehicle_id}')
 
         # 添加图例和标签
