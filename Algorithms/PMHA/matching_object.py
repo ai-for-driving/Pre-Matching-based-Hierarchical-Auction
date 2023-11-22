@@ -1,6 +1,6 @@
 from typing import List
 import numpy as np
-from Objectives.vehicle import vehicle
+from Objects.vehicle import vehicle
 from Utilities.time_calculation import compute_V2I_SINR, compute_V2V_SINR
 
 class matching(object):
@@ -24,6 +24,9 @@ class matching(object):
         for i in range(self._client_vehicle_num):
             if len(self._preference_list[i]) > 0:
                 self._matching.append((i, self._preference_list[i][0]))
+                
+    def get_preference_list(self) -> List[List[dict]]:
+        return self._preference_list
     
     def get_matching(self) -> List[tuple]:
         return self._matching
@@ -104,7 +107,16 @@ class matching(object):
                     if is_other_client_vehicle_partner_in_preference_list_of_client_vehicle and is_client_vehicle_partner_in_preference_list_of_other_client_vehicle and \
                         index_of_other_client_vehicle_partner_in_preference_list_of_client_vehicle < self._preference_list[client_vehicle_index].index(client_vehicle_partner) and \
                         index_of_client_vehicle_partner_in_preference_list_of_other_client_vehicle < self._preference_list[other_client_vehicle_index].index(other_client_vehicle_partner):
-                        blocking_pairs.append((client_vehicle_index, other_client_vehicle_index))
+                        if blocking_pairs == []:
+                            blocking_pairs.append((client_vehicle_index, other_client_vehicle_index))
+                        else:
+                            is_blocking_pair = True
+                            for blocking_pair in blocking_pairs:
+                                if client_vehicle_index in blocking_pair or other_client_vehicle_index in blocking_pair:
+                                    is_blocking_pair = False
+                                    break
+                            if is_blocking_pair:
+                                blocking_pairs.append((client_vehicle_index, other_client_vehicle_index))
         return blocking_pairs
 
     def is_stable(self) -> bool:

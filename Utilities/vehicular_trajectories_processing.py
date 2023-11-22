@@ -1,6 +1,6 @@
 import sys
 sys.path.append(r"/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/")
-from Objectives.mobility import mobility
+from Objects.mobility import mobility
 from Utilities.time_calculation import transform_str_data_time_into_timestamp_ms, transform_str_data_time_into_timestamp
 from typing import List, Optional, Tuple
 import pandas as pd
@@ -321,7 +321,7 @@ class TrajectoriesProcessing(object):
                     # print("\nmobility_index", mobility_index)
                     # print("\nlen(self._vehicle_mobilities[vehicle_index]", len(self._vehicle_mobilities[vehicle_index]))
                     if mobility_index == 0 and self._vehicle_mobilities[vehicle_index][mobility_index].get_time() != 0:
-                        print("\nCase 1")
+                        # print("\nCase 1")
                         time_difference = self._vehicle_mobilities[vehicle_index][mobility_index].get_time()
                         local_x_difference = (self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_x() - 
                             self._vehicle_mobilities[vehicle_index][mobility_index].get_x()) / \
@@ -367,7 +367,7 @@ class TrajectoriesProcessing(object):
                     elif mobility_index != len(self._vehicle_mobilities[vehicle_index]) - 1 and \
                         self._vehicle_mobilities[vehicle_index][mobility_index].get_time() \
                         != self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_time() - 1:
-                        print("\nCase 2")                        
+                        # print("\nCase 2")                        
                         time_difference = self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_time() - \
                             self._vehicle_mobilities[vehicle_index][mobility_index].get_time() - 1
                         local_x_difference = self._vehicle_mobilities[vehicle_index][mobility_index + 1].get_x() - \
@@ -402,7 +402,7 @@ class TrajectoriesProcessing(object):
                         mobility_index = mobility_index + time_difference + 1
                     elif mobility_index == len(self._vehicle_mobilities[vehicle_index]) - 1 and \
                         self._vehicle_mobilities[vehicle_index][mobility_index].get_time() != self._slot_time_length - 1:
-                        print("\nCase 3")
+                        # print("\nCase 3")
                         time_difference = self._slot_time_length - self._vehicle_mobilities[vehicle_index][mobility_index].get_time() - 1
                         local_x_difference = (self._vehicle_mobilities[vehicle_index][mobility_index].get_x() - \
                             self._vehicle_mobilities[vehicle_index][mobility_index - 1].get_x()) / \

@@ -1,7 +1,8 @@
 from typing import List
 import numpy as np
-from Objectives.vehicle import vehicle
-from Objectives.edge_node import edge_node
+np.set_printoptions(threshold=np.inf)
+from Objects.vehicle import vehicle
+from Objects.edge_node import edge_node
 from Algorithms.PMHA.matching_object import matching
 from Utilities.distance_and_coverage import calculate_distance
 from Utilities.noma import obtain_channel_gains_between_client_vehicle_and_server_vehicles, obtain_channel_gains_between_vehicles_and_edge_nodes
@@ -244,8 +245,21 @@ def best_k_offloading_node_matching(
                 
                 updated_matching.delete_matching_of_client_vehicle(blocking_pair[0])
                 updated_matching.delete_matching_of_client_vehicle(blocking_pair[1])
-                updated_matching.insert_matching((blocking_pair[0], partner_of_v2))
-                updated_matching.insert_matching((blocking_pair[1], partner_of_v1))
+                
+                new_partner_of_v1 = dict()
+                new_partner_of_v2 = dict()
+                for preference in now_matching.get_preference_list()[blocking_pair[0]]:
+                    if preference["id"] == partner_of_v2["id"] and preference["type"] == partner_of_v2["type"]:
+                        new_partner_of_v1 = preference
+                        break
+                for preference in preference_list[blocking_pair[1]]:
+                    if preference["id"] == partner_of_v1["id"] and preference["type"] == partner_of_v1["type"]:
+                        new_partner_of_v2 = preference
+                        break
+                if new_partner_of_v1 == dict() or new_partner_of_v2 == dict():
+                    raise ValueError("The new partner of v1 or v2 is wrong.")
+                updated_matching.insert_matching((blocking_pair[0], new_partner_of_v1))
+                updated_matching.insert_matching((blocking_pair[1], new_partner_of_v2))
                 
                 updated_v1_sinr = 0
                 updated_v2_sinr = 0
@@ -307,5 +321,8 @@ def best_k_offloading_node_matching(
                 random_number = np.random.randint(0, preference_list_number)
                 now_matching.insert_matching((client_vehicle_index, preference_list[client_vehicle_index][random_number]))
         
+        # print("round:", _)
+        # print("\nbest_k_nodes")
+        # print(best_k_nodes)
     
     return best_k_nodes

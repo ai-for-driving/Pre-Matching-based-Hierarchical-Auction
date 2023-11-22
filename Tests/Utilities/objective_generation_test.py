@@ -1,7 +1,7 @@
 import sys
 import random
 sys.path.append(r"/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/")
-from Utilities.objective_generation import generate_task_set
+from Utilities.object_generation import generate_task_set
 
 
 def generate_task_set_test():

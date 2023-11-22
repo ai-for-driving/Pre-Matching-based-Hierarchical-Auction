@@ -6,8 +6,8 @@ class auction_buyer(object):
         index: int,    #  the index of vehicle or edge node
         vehicle_indexs: list,    #  the indexs of vehicles
         time_slot_index: int,
-        requested_computing_resources: float,
-        requested_storage_resources: float,
+        requested_computing_resources: float,       # cycles
+        requested_storage_resources: float,         # bits
         bid: float,
         payment: float,
     ) -> None:
@@ -88,8 +88,8 @@ class auction_seller(object):
         seller_type: str,    #  e.g., "vehicle", "edge node", "cloud"
         index: int,    #  the index of vehicle or edge node
         time_slot_index: int,
-        offered_computing_resources: float,
-        offered_storage_resources: float,
+        offered_computing_resources: float,         # Hz
+        offered_storage_resources: float,           # bits
         ask: float,
         payment: float,
     ) -> None:

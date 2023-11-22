@@ -1,6 +1,6 @@
 import sys
 sys.path.append(r"/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/")
-from Objectives.mobility import mobility
+from Objects.mobility import mobility
 
 def test_mobility():
     m = mobility(

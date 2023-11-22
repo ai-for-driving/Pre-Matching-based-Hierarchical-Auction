@@ -1,5 +1,5 @@
 from typing import List
-from Objectives.edge_node import edge_node
+from Objects.edge_node import edge_node
 import numpy as np
 import random
 
@@ -15,8 +15,7 @@ def get_wired_bandwidth_between_edge_node_and_other_edge_nodes(
         for j in range(num_edge_nodes):
             if i == j:
                 continue
-            if(distance_matrix[i][j] <= edge_nodes[i].get_communication_range()):
-                result[i, j] = weight * transmission_rate / distance_matrix[i][j]
+            result[i, j] = weight * transmission_rate / distance_matrix[i][j]
     return result
 
 def get_wired_bandwidth_between_edge_nodes_and_the_cloud(

@@ -1,5 +1,5 @@
 from typing import List
-from Objectives.mobility import mobility
+from Objects.mobility import mobility
 class edge_node(object):
     
     def __init__(
