@@ -1,7 +1,7 @@
 from typing import List
 import numpy as np
-from Objectives.vehicle import vehicle
-from Objectives.edge_node import edge_node
+from Objects.vehicle import vehicle
+from Objects.edge_node import edge_node
 
 def generate_rayleigh_distributed_small_scale_fading(size: int = 1):
     return np.random.rayleigh(scale=1, size=size)

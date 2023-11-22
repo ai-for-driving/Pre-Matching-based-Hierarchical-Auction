@@ -1,10 +1,10 @@
 import random
 from typing import List
-from Objectives.task import task
-from Objectives.mobility import mobility
-from Objectives.vehicle import vehicle
-from Objectives.edge_node import edge_node
-from Objectives.cloud_server import cloud_server
+from Objects.task import task
+from Objects.mobility import mobility
+from Objects.vehicle import vehicle
+from Objects.edge_node import edge_node
+from Objects.cloud_server import cloud_server
 from Utilities.vehicular_trajectories_processing import TrajectoriesProcessing
 from Utilities.wired_bandwidth import get_wired_bandwidth_between_edge_nodes_and_the_cloud
 

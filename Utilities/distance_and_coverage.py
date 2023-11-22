@@ -1,8 +1,8 @@
 from typing import List
 import numpy as np
-from Objectives.mobility import mobility
-from Objectives.vehicle import vehicle
-from Objectives.edge_node import edge_node
+from Objects.mobility import mobility
+from Objects.vehicle import vehicle
+from Objects.edge_node import edge_node
 
 def calculate_distance(
     mobility1: mobility, 

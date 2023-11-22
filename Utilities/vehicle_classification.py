@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from Objectives.vehicle import vehicle
+from Objects.vehicle import vehicle
 
 def get_client_and_server_vehicles(
     now: int,

@@ -1,4 +1,4 @@
-import random
+from Utilities.conversion import cover_MB_to_bit
 
 class task(object):
     '''
@@ -6,7 +6,7 @@ class task(object):
     '''
     def __init__(
         self,
-        input_data_size: float,     # bits
+        input_data_size: float,     # MB
         cqu_cycles: float,          # cycles/bit
         deadline: float,            # seconds
         ) -> None:
@@ -24,8 +24,8 @@ class task(object):
         return self._deadline
     
     def get_requested_computing_resources(self) -> float:
-        return self._cqu_cycles * self._input_data_size / self._deadline
+        return self._cqu_cycles * cover_MB_to_bit(self._input_data_size) / self._deadline
     
     def __str__(self) -> str:
-        return "Input data size: " + str(self._input_data_size) + "\nCqu cycles: " + str(self._cqu_cycles) + "\nDeadline: " + str(self._deadline)
+        return "Input data size: " + str(self._input_data_size) + "\nCqu cycles: " + str(self._cqu_cycles) + "\nDeadline: " + str(self._deadline) + "\nRequested computing resources: " + str(self.get_requested_computing_resources()) + "\n"
         

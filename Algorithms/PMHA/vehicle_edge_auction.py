@@ -1,10 +1,11 @@
 from typing import List
 import numpy as np
 from Algorithms.PMHA.player import auction_buyer, auction_seller
-from Objectives.task import task
-from Objectives.vehicle import vehicle
-from Objectives.edge_node import edge_node
+from Objects.task import task
+from Objects.vehicle import vehicle
+from Objects.edge_node import edge_node
 from Strategy.strategy import action
+from Utilities.conversion import cover_MB_to_bit, cover_GHz_to_Hz
 
 def init_buyers_and_sellers_at_vehicle_edge_auction(
     client_vehicles: List[vehicle],
@@ -21,20 +22,21 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
     for client_vehicle_index in range(len(client_vehicles)):
         client_vehicle = client_vehicles[client_vehicle_index]
         tasks_list = client_vehicle.get_tasks_by_time(now=now)
-        requested_computing_resources = 0
-        requested_storage_resources = 0
+        requested_computing_resources = 0       # cycles
+        requested_storage_resources = 0         # bits
         for task_tuple in tasks_list:
             requested_computing_resources += tasks[task_tuple[1]].get_requested_computing_resources()
-            requested_storage_resources += tasks[task_tuple[1]].get_input_data_size()
-        if requested_computing_resources <= client_vehicle.get_available_computing_capability(now=now) and \
-            requested_storage_resources <= client_vehicle.get_available_storage_capability(now=now):
+            requested_storage_resources += cover_MB_to_bit(tasks[task_tuple[1]].get_input_data_size())
+        
+        if requested_computing_resources <= cover_GHz_to_Hz(client_vehicle.get_available_computing_capability(now=now)) and \
+            requested_storage_resources <= cover_MB_to_bit(client_vehicle.get_available_storage_capability(now=now)):
             output_action.set_offloading_decision_at_local(
                 client_vehicle_index=client_vehicle_index,
                 offloading_decision=1,
             )
             output_action.set_computing_resource_decision_at_local(
                 client_vehicle_index=client_vehicle_index,
-                computing_resource_decision=requested_computing_resources / client_vehicle.get_available_computing_capability(now=now),
+                computing_resource_decision=requested_computing_resources / cover_GHz_to_Hz(client_vehicle.get_available_computing_capability(now=now)),
             )
             continue
         
@@ -55,8 +57,8 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
             seller_type="server_vehicle",
             index=server_vehicle_index,
             time_slot_index=now,
-            offered_computing_resources=server_vehicle.get_available_computing_capability(now=now),
-            offered_storage_resources=server_vehicle.get_available_storage_capability(now=now),
+            offered_computing_resources=cover_GHz_to_Hz(server_vehicle.get_available_computing_capability(now=now)),
+            offered_storage_resources=cover_MB_to_bit(server_vehicle.get_available_storage_capability(now=now)),
             ask=0,
             payment=0,
         ))
@@ -66,11 +68,13 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
             seller_type="edge_node",
             index=edge_node_index,
             time_slot_index=now,
-            offered_computing_resources=edge_node.get_available_computing_capability(now=now),
-            offered_storage_resources=edge_node.get_available_storage_capability(now=now),
+            offered_computing_resources=cover_GHz_to_Hz(edge_node.get_available_computing_capability(now=now)),
+            offered_storage_resources=cover_MB_to_bit(edge_node.get_available_storage_capability(now=now)),
             ask=0,
             payment=0,
         ))
+        
+    print("output_action: \n", output_action)
     
     output_buyer_list = list()
     output_seller_list = list()

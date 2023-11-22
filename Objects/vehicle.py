@@ -1,7 +1,7 @@
 from typing import List, Tuple
 import random
 import numpy as np
-from Objectives.mobility import mobility
+from Objects.mobility import mobility
 
 class vehicle(object):
     '''

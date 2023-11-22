@@ -1,6 +1,6 @@
 import sys
 sys.path.append(r"/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/")
-from Objectives.task import task
+from Objects.task import task
 
 
 def test_task():

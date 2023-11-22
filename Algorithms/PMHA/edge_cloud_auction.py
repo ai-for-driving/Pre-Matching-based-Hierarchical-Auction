@@ -1,11 +1,12 @@
 from typing import List
 import numpy as np
 from Algorithms.PMHA.player import auction_buyer, auction_seller
-from Objectives.task import task
-from Objectives.vehicle import vehicle
-from Objectives.edge_node import edge_node
-from Objectives.cloud_server import cloud_server
+from Objects.task import task
+from Objects.vehicle import vehicle
+from Objects.edge_node import edge_node
+from Objects.cloud_server import cloud_server
 from Strategy.strategy import action
+from Utilities.conversion import cover_MB_to_bit, cover_GHz_to_Hz
 
 def init_buyers_and_sellers_at_edge_cloud_auction(
     client_vehicles: List[vehicle],
@@ -27,16 +28,19 @@ def init_buyers_and_sellers_at_edge_cloud_auction(
                 tasks_list = client_vehicles[client_vehicle_index].get_tasks_by_time(now=now)
                 for task_tuple in tasks_list:
                     tasks_tuple_list.append((client_vehicle_index, task_tuple[1]))
-        requested_computing_resources = 0
-        requested_storage_resources = 0
+        requested_computing_resources = 0       # cycles
+        requested_storage_resources = 0         # bits
         for task_tuple in tasks_tuple_list:
             requested_computing_resources += tasks[task_tuple[1]].get_requested_computing_resources()
-            requested_storage_resources += tasks[task_tuple[1]].get_input_data_size()
+            requested_storage_resources += cover_MB_to_bit(tasks[task_tuple[1]].get_input_data_size())
         
         vehicle_indexs = list()
+        edge_node_available_computing_capability = cover_GHz_to_Hz(edge_node.get_available_computing_capability(now=now))
+        edge_node_available_storage_capability = cover_MB_to_bit(edge_node.get_available_storage_capability(now=now))
+        
         for task_tuple in tasks_tuple_list:
-            if tasks[task_tuple[1]].get_requested_computing_resources() < edge_node.get_available_computing_capability(now=now) and \
-                tasks[task_tuple[1]].get_input_data_size() < edge_node.get_available_storage_capability(now=now):
+            if tasks[task_tuple[1]].get_requested_computing_resources() < cover_GHz_to_Hz(edge_node.get_available_computing_capability(now=now)) and \
+                cover_MB_to_bit(tasks[task_tuple[1]].get_input_data_size()) < cover_MB_to_bit(edge_node.get_available_storage_capability(now=now)):
                 output_action.set_offloading_decision_of_vehicle_to_edge_node(
                     client_vehicle_index=task_tuple[0],
                     edge_node_index=edge_node_index,
@@ -45,10 +49,14 @@ def init_buyers_and_sellers_at_edge_cloud_auction(
                 output_action.set_computing_resource_decision_of_vehicle_to_edge_node(
                     client_vehicle_index=task_tuple[0],
                     edge_node_index=edge_node_index,
-                    computing_resource_decision=tasks[task_tuple[1]].get_requested_computing_resources() / edge_node.get_available_computing_capability(now=now),
+                    computing_resource_decision=tasks[task_tuple[1]].get_requested_computing_resources() / cover_GHz_to_Hz(edge_node.get_available_computing_capability(now=now)),
                 )
                 requested_computing_resources -= tasks[task_tuple[1]].get_requested_computing_resources()
-                requested_storage_resources -= tasks[task_tuple[1]].get_input_data_size()
+                requested_storage_resources -= cover_MB_to_bit(tasks[task_tuple[1]].get_input_data_size())
+                
+                edge_node_available_computing_capability -= tasks[task_tuple[1]].get_requested_computing_resources()
+                edge_node_available_storage_capability -= cover_MB_to_bit(tasks[task_tuple[1]].get_input_data_size())
+                
             else:
                 output_action.set_offloading_decision_of_vehicle_to_edge_node(
                     client_vehicle_index=task_tuple[0],
@@ -73,13 +81,23 @@ def init_buyers_and_sellers_at_edge_cloud_auction(
                 bid=0,
                 payment=0,
             ))
+        if edge_node_available_computing_capability > 0 and edge_node_available_storage_capability > 0:
+            sellers.append(auction_seller(
+                seller_type="edge_node",
+                index=edge_node_index,
+                time_slot_index=now,
+                offered_computing_resources=edge_node_available_computing_capability,
+                offered_storage_resources=edge_node_available_storage_capability,
+                ask=0,
+                payment=0,
+            ))
     
     sellers.append(auction_seller(
         seller_type="cloud",
         index=0,
         time_slot_index=now,
-        offered_computing_resources=cloud.get_available_computing_resources(),
-        offered_storage_resources=cloud.get_available_storage_resources(),
+        offered_computing_resources=cover_GHz_to_Hz(cloud.get_available_computing_resources()),
+        offered_storage_resources=cover_MB_to_bit(cloud.get_available_storage_resources()),
         ask=0,
         payment=0,
     ))

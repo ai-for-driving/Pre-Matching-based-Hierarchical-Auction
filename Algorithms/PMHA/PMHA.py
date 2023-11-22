@@ -1,9 +1,9 @@
 from typing import List
 import numpy as np
-from Objectives.task import task
-from Objectives.vehicle import vehicle
-from Objectives.edge_node import edge_node
-from Objectives.cloud_server import cloud_server
+from Objects.task import task
+from Objects.vehicle import vehicle
+from Objects.edge_node import edge_node
+from Objects.cloud_server import cloud_server
 from Strategy.strategy import action
 from Algorithms.PMHA.best_k_matching import init_preference_list, best_k_offloading_node_matching, get_connection_time_of_vehicles_under_V2V_communication_range, get_connection_time_of_vehicle_under_V2I_communication_range
 from Algorithms.PMHA.vehicle_edge_auction import init_buyers_and_sellers_at_vehicle_edge_auction, init_bids_and_asks_of_vehicle_edge_auction, resource_allocation_and_pricing
@@ -52,6 +52,9 @@ class PMHA_agent(object):
             server_vehicles=server_vehicles,
             now=now,
         )
+        
+        # print("connection_time_of_vehicles_under_V2V_communication_range")
+        # print(connection_time_of_vehicles_under_V2V_communication_range)
     
         connection_time_of_vehicles_under_V2I_communication_range = get_connection_time_of_vehicle_under_V2I_communication_range(
             vehicles_under_V2I_communication_range=vehicles_under_V2I_communication_range,
@@ -59,6 +62,9 @@ class PMHA_agent(object):
             edge_nodes=edge_nodes,
             now=now,
         )
+        
+        # print("connection_time_of_vehicles_under_V2I_communication_range")
+        # print(connection_time_of_vehicles_under_V2I_communication_range)
         
         preference_list = init_preference_list(
             client_vehicles=client_vehicles,
@@ -70,6 +76,9 @@ class PMHA_agent(object):
             connection_time_of_vehicles_under_V2I_communication_range=connection_time_of_vehicles_under_V2I_communication_range,
             now=now,
         )
+        
+        # print("preference_list")
+        # print(preference_list)
         
         best_k_nodes = best_k_offloading_node_matching(
             client_vehicles=client_vehicles,
@@ -84,6 +93,9 @@ class PMHA_agent(object):
             white_gaussian_noise=self._white_gaussian_noise,
         )
         
+        # print("best_k_nodes")
+        # print(best_k_nodes)
+        
         self._action, vehicle_edge_auction_buyer_list, vehicle_edge_auction_seller_list = init_buyers_and_sellers_at_vehicle_edge_auction(
             client_vehicles=client_vehicles,
             server_vehicles=server_vehicles,
@@ -93,6 +105,8 @@ class PMHA_agent(object):
             best_k_nodes=best_k_nodes,
             now=now,
         )
+        
+        print("self._action: \n", self._action)
         
         is_vehicle_edge_auction_seller_list_all_empty = True
         for vehicle_edge_auction_sellers in vehicle_edge_auction_seller_list:

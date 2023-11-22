@@ -1,11 +1,11 @@
 from Utilities.noma import obtain_channel_gains_between_client_vehicle_and_server_vehicles, obtain_channel_gains_between_vehicles_and_edge_nodes
 from Utilities.wired_bandwidth import get_wired_bandwidth_between_edge_node_and_other_edge_nodes
 from Environment.env_profile import env_profile
-from Objectives.task import task
-from Objectives.vehicle import vehicle
-from Objectives.edge_node import edge_node
-from Objectives.cloud_server import cloud_server
-from Utilities.objective_generation import generate_task_set, generate_vehicles, generate_edge_nodes, generate_cloud
+from Objects.task import task
+from Objects.vehicle import vehicle
+from Objects.edge_node import edge_node
+from Objects.cloud_server import cloud_server
+from Utilities.object_generation import generate_task_set, generate_vehicles, generate_edge_nodes, generate_cloud
 from Utilities.vehicle_classification import get_client_and_server_vehicles
 from Utilities.distance_and_coverage import get_distance_matrix_between_client_vehicles_and_server_vehicles, get_distance_matrix_between_vehicles_and_edge_nodes, get_distance_matrix_between_edge_nodes  
 from Utilities.distance_and_coverage import get_vehicles_under_V2I_communication_range, get_vehicles_under_V2V_communication_range
@@ -40,7 +40,6 @@ class env(object):
         self._task_processed_at_cloud_at_time = [0 for _ in range(profile.get_slot_length())]
         self._task_successfully_processed_num_at_time = [0 for _ in range(profile.get_slot_length())]
         
-        
         self._resutls_file_name = "/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/Results/" \
             + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + ".txt"
         
@@ -55,7 +54,10 @@ class env(object):
             max_deadline=profile.get_max_deadline_of_tasks(),
         )
         
-        min_map_x, max_map_x, min_map_y, max_map_y, self._vehicles : List[vehicle] = generate_vehicles(
+        for task in self._tasks:
+            print("task:\n", task)
+        
+        min_map_x, max_map_x, min_map_y, max_map_y, self._vehicles = generate_vehicles(
             vehicle_num=profile.get_vehicle_num(),
             slot_length=profile.get_slot_length(),
             file_name_key=profile.get_vehicle_mobility_file_name_key(),
@@ -82,7 +84,6 @@ class env(object):
             max_map_x=max_map_x,
             min_map_y=min_map_y,
             max_map_y=max_map_y,
-            file_name=profile.get_edge_mobility_file_name(),
             min_computing_capability=profile.get_min_computing_capability_of_edges(),
             max_computing_capability=profile.get_max_computing_capability_of_edges(),
             min_storage_capability=profile.get_min_storage_capability_of_edges(),
@@ -101,7 +102,7 @@ class env(object):
             transmission_rate=profile.get_I2I_transmission_rate(),
             distance_matrix=self._distance_matrix_between_edge_nodes,
         )
-        
+                
         self._cloud : cloud_server = generate_cloud(
             computing_capability=profile.get_cloud_computing_capability(),
             storage_capability=profile.get_cloud_storage_capability(),
@@ -226,6 +227,8 @@ class env(object):
                         task_computing_time = 0
                         task_processing_time = 0
                         task_during_time = 0
+                        allocated_computing_capability = 0
+                        allocated_storage_capability = 0
                         
                         if task_offloading_decision == 0:  # processing at local                       
                             self._task_processed_at_local_at_time[self._now] += 1
@@ -248,6 +251,7 @@ class env(object):
                                 now=self._now,
                                 duration=task_during_time,
                             )
+                            allocated_storage_capability = task_data_size
                             self._client_vehicles[client_vehicle_index].set_consumed_storage_capability(
                                 consumed_storage_capability=task_data_size,
                                 now=self._now,
@@ -286,6 +290,7 @@ class env(object):
                                     now=task_computing_start_time,
                                     duration=task_during_time,
                                 )
+                                allocated_storage_capability = task_data_size
                                 self._server_vehicles[server_vehicle_index] : vehicle .set_consumed_storage_capability(
                                     consumed_storage_capability=task_data_size,
                                     now=task_computing_start_time,
@@ -335,6 +340,7 @@ class env(object):
                                     now=task_computing_start_time,
                                     duration=task_during_time,
                                 )
+                                allocated_storage_capability = task_data_size
                                 self._edge_nodes[edge_node_index] : edge_node .set_consumed_storage_capability(
                                     consumed_storage_capability=task_data_size,
                                     now=task_computing_start_time,
@@ -356,6 +362,12 @@ class env(object):
                                                 edge_node_index=other_edge_node_index,
                                                 task_data_size=task_data_size,
                                             )
+                                            if self._wired_bandwidths_between_edge_node_and_other_edge_nodes[edge_node_index][other_edge_node_index] == 0:
+                                                print("i2i wired bandwidth error")
+                                                print(self._wired_bandwidths_between_edge_node_and_other_edge_nodes)
+                                                print("edge_node_index", edge_node_index)
+                                                print("other_edge_node_index", other_edge_node_index)
+                                                raise Exception("i2i wired bandwidth error")
                                             task_i2i_transmission_time = obtain_wired_transmission_time(
                                                 transmission_rate=self._wired_bandwidths_between_edge_node_and_other_edge_nodes[edge_node_index][other_edge_node_index],
                                                 data_size=task_data_size,
@@ -385,6 +397,7 @@ class env(object):
                                     now=task_computing_start_time,
                                     duration=task_during_time,
                                 )
+                                allocated_storage_capability = task_data_size
                                 self._edge_nodes[edge_node_index] : edge_node .set_consumed_storage_capability(
                                     consumed_storage_capability=task_data_size,
                                     now=task_computing_start_time,
@@ -406,6 +419,11 @@ class env(object):
                                         edge_node_index=edge_node_index,
                                         task_data_size=task_data_size,
                                     )
+                                    if self._cloud.get_wired_bandwidth_between_edge_node_and_cloud(edge_node_index=edge_node_index) == 0:
+                                        print("i2c wired bandwidth error")
+                                        print(self._cloud.get_wired_bandwidth_between_edge_node_and_cloud(edge_node_index=edge_node_index))
+                                        print("edge_node_index", edge_node_index)
+                                        raise Exception("i2c wired bandwidth error")
                                     task_i2c_transmission_time = obtain_wired_transmission_time(
                                         transmission_rate=self._cloud.get_wired_bandwidth_between_edge_node_and_cloud(edge_node_index=edge_node_index),
                                         data_size=task_data_size,
@@ -434,12 +452,24 @@ class env(object):
                                 now=task_computing_start_time,
                                 duration=task_during_time,
                             )
-                            
+                            allocated_storage_capability = task_data_size
                             self._cloud : cloud_server .set_consumed_storage_capability(
                                 consumed_storage_capability=task_data_size,
                                 now=task_computing_start_time,
                                 duration=task_during_time,
                             )
+                        
+                        self._average_processing_time_at_time[self._now] += task_processing_time
+                        self._average_computing_time_at_time[self._now] += task_computing_time
+                        self._average_transmission_time_at_time[self._now] += task_transmission_time
+                        self._average_computing_capability_at_time[self._now] += allocated_computing_capability
+                        self._average_storage_capability_at_time[self._now] += allocated_storage_capability
+                
+                self._average_processing_time_at_time[self._now] /= self._task_num_at_time[self._now]
+                self._average_computing_time_at_time[self._now] /= self._task_num_at_time[self._now]
+                self._average_transmission_time_at_time[self._now] /= self._task_num_at_time[self._now]
+                self._average_computing_capability_at_time[self._now] /= self._task_num_at_time[self._now]
+                self._average_storage_capability_at_time[self._now] /= self._task_num_at_time[self._now]
             
             self.update()
                             
@@ -612,7 +642,10 @@ class env(object):
                     + "task_processed_at_local_edge_at_time: " + str(self._task_processed_at_local_edge_at_time) + "\n" \
                     + "task_processed_at_other_edge_at_time: " + str(self._task_processed_at_other_edge_at_time) + "\n" \
                     + "task_processed_at_cloud_at_time: " + str(self._task_processed_at_cloud_at_time) + "\n" \
-                    + "task_successfully_processed_num_at_time: " + str(self._task_successfully_processed_num_at_time) + "\n" )
+                    + "task_successfully_processed_num_at_time: " + str(self._task_successfully_processed_num_at_time) + "\n" \
+                    + "task_num_sum: " + str(sum(self._task_num_at_time)) + "\n" \
+                    + "task_successfully_processed_num_sum: " + str(sum(self._task_successfully_processed_num_at_time)) + "\n" \
+                    + "service_ratio: " + str(sum(self._task_successfully_processed_num_at_time) / sum(self._task_num_at_time)))
         except:
             raise Exception("No such file: " + self._resutls_file_name)
         return None
