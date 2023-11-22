@@ -5,7 +5,7 @@ from Objects.task import task
 from Objects.vehicle import vehicle
 from Objects.edge_node import edge_node
 from Strategy.strategy import action
-from Utilities.conversion import cover_MB_to_bit, cover_GHz_to_Hz
+from Utilities.conversion import cover_MB_to_bit, cover_GHz_to_Hz, cover_bit_to_MB, cover_Hz_to_GHz
 
 def init_buyers_and_sellers_at_vehicle_edge_auction(
     client_vehicles: List[vehicle],
@@ -27,6 +27,15 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
         for task_tuple in tasks_list:
             requested_computing_resources += tasks[task_tuple[1]].get_requested_computing_resources()
             requested_storage_resources += cover_MB_to_bit(tasks[task_tuple[1]].get_input_data_size())
+        
+        # print("*" * 50)
+        # print("client_vehicle_index: ", client_vehicle_index)
+        # print("requested_computing_resources: ", cover_Hz_to_GHz(requested_computing_resources))
+        # print("requested_storage_resources: ", cover_bit_to_MB(requested_storage_resources))
+        # print("client_vehicle.get_available_computing_capability(now=now)): ", client_vehicle.get_available_computing_capability(now=now))
+        # print("client_vehicle.get_available_storage_capability(now=now)): ", client_vehicle.get_available_storage_capability(now=now))
+        # print("requested_computing_resources <= cover_GHz_to_Hz(client_vehicle.get_available_computing_capability(now=now)): ", requested_computing_resources <= cover_GHz_to_Hz(client_vehicle.get_available_computing_capability(now=now)))
+        # print("requested_storage_resources <= cover_MB_to_bit(client_vehicle.get_available_storage_capability(now=now)): ", requested_storage_resources <= cover_MB_to_bit(client_vehicle.get_available_storage_capability(now=now)))
         
         if requested_computing_resources <= cover_GHz_to_Hz(client_vehicle.get_available_computing_capability(now=now)) and \
             requested_storage_resources <= cover_MB_to_bit(client_vehicle.get_available_storage_capability(now=now)):
@@ -74,10 +83,12 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
             payment=0,
         ))
         
-    print("output_action: \n", output_action)
+    # print("output_action: \n", output_action)
     
     output_buyer_list = list()
     output_seller_list = list()
+    
+    # print("best_k_nodes: \n", best_k_nodes)
     
     for server_vehicle_index in range(len(server_vehicles)):
         buyer_list = list()
@@ -90,7 +101,7 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
                         break
         seller_list = list()
         for seller in sellers:
-            if seller == "vehicle" and \
+            if seller.get_type() == "vehicle" and \
                 seller.get_index() == server_vehicle_index:
                 seller_list.append(seller)
                 break
@@ -108,7 +119,7 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
                         break
         seller_list = list()
         for seller in sellers:
-            if seller == "edge_node" and \
+            if seller.get_type() == "edge_node" and \
                 seller.get_index() == edge_node_index:
                 seller_list.append(seller)
                 break
@@ -122,20 +133,21 @@ def init_bids_and_asks_of_vehicle_edge_auction(
     buyers_list: List[List[auction_buyer]],
     sellers_list: List[List[auction_seller]],
 ) -> List[tuple[List[auction_buyer], List[auction_seller]]]:
+    
     for i in range(len(buyers_list)):
         buyers = buyers_list[i]
         sellers = sellers_list[i]
         buyer_num = len(buyers)
         random_bids = np.random.uniform(0, 1, buyer_num)
-        for buyer in buyers:
-            random_bid_price = random_bids[buyer.get_index()]
-            bid = random_bid_price * buyer.get_requested_computing_resources()
-            buyer.set_bid(bid)
+        for _ in range(buyer_num):
+            random_bid_price = random_bids[_]
+            bid = random_bid_price * buyers[_].get_requested_computing_resources()
+            buyers[_].set_bid(bid)
         sorted_buyers = sorted(buyers, key=lambda x: x.get_bid(), reverse=True)
         seller_num = len(sellers)
         random_asks = np.random.uniform(0, 1, seller_num)
-        for seller in sellers:
-            seller.set_ask(random_asks[seller.get_index()])
+        for _ in range(seller_num):
+            sellers[_].set_ask(random_asks[_])
         sorted_sellers = sorted(sellers, key=lambda x: x.get_ask())
         buyers_list[i] = sorted_buyers
         sellers_list[i] = sorted_sellers
@@ -177,7 +189,8 @@ def resource_allocation_and_pricing(
                     else:
                         break
         else:
-            raise ValueError("The number of sellers is not 1.")
+            continue
+            # raise ValueError("The number of sellers is not 1.")
         
     for client_vehicle_index in range(client_vehicle_number):
         min_ask = 1
