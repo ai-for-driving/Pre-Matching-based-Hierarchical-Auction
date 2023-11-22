@@ -54,8 +54,8 @@ class env(object):
             max_deadline=profile.get_max_deadline_of_tasks(),
         )
         
-        for task in self._tasks:
-            print("task:\n", task)
+        # for task in self._tasks:
+        #     print("task:\n", task)
         
         min_map_x, max_map_x, min_map_y, max_map_y, self._vehicles = generate_vehicles(
             vehicle_num=profile.get_vehicle_num(),
