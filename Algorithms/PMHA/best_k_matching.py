@@ -1,8 +1,10 @@
 from typing import List
 import numpy as np
+import sys
+sys.path.append(r"/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/")
 np.set_printoptions(threshold=np.inf)
-from Objects.vehicle import vehicle
-from Objects.edge_node import edge_node
+from Objects.vehicle_object import vehicle
+from Objects.edge_node_object import edge_node
 from Algorithms.PMHA.matching_object import matching
 from Utilities.distance_and_coverage import calculate_distance
 from Utilities.noma import obtain_channel_gains_between_client_vehicle_and_server_vehicles, obtain_channel_gains_between_vehicles_and_edge_nodes
@@ -147,7 +149,7 @@ def best_k_offloading_node_matching(
     preference_list: List[List[dict]],
     random_change_matching_probability: float,
     path_loss_exponent: int,
-    white_gaussian_noise: float,
+    white_gaussian_noise: int,
 ) -> np.ndarray:
     # Initialization
     client_vehicle_num = len(client_vehicles)

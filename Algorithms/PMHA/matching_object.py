@@ -1,6 +1,8 @@
 from typing import List
 import numpy as np
-from Objects.vehicle import vehicle
+import sys
+sys.path.append(r"/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/")
+from Objects.vehicle_object import vehicle
 from Utilities.time_calculation import compute_V2I_SINR, compute_V2V_SINR
 
 class matching(object):
@@ -11,7 +13,7 @@ class matching(object):
         client_vehicle_num: int,
         server_vehicle_num: int,
         edge_node_num: int,
-        white_gaussian_noise: float,
+        white_gaussian_noise: int,
         preference_list: List[List[dict]]
     ) -> None:
         self._matching = list()

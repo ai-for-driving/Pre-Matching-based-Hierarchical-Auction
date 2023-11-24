@@ -1,7 +1,8 @@
 from typing import List, Tuple
 import random
 import numpy as np
-from Objects.mobility import mobility
+from Objects.mobility_object import mobility
+from typing import Optional
 
 class vehicle(object):
     '''
@@ -101,15 +102,18 @@ class vehicle(object):
                     tasks.append((i, random.choices(range(self._task_num), k=1)[0]))            
         return tasks
     
-    def __str__(self, now) -> str:
-        return "location_x: " + self.get_mobilities(now).get_x() \
-            + "\nlocation_y: " + self.get_mobilities(now).get_y() \
-            + "\nspeed: " + self.get_mobilities(now).get_speed() \
-            + "\ndirection: " + self.get_mobilities(now).get_direction() \
-            + "\ncomputing_capability: " + self.get_computing_capability() \
-            + "\nstorage_capability: " + self.get_storage_capability() \
-            + "\navailable_computing_capability: " + self.get_available_computing_capability(now) \
-            + "\navailable_storage_capability: " + self.get_available_storage_capability(now) \
-            + "\ntransmission_power: " + self.get_transmission_power() \
-            + "\ncommunication_range: " + self.get_communication_range() \
-            + "\ntask_arrival_rate: " + self.get_task_arrival_rate()
+    def __str__(
+        self, 
+        now: Optional[int] = 0,
+    ) -> str:
+        return "location_x: " + str(self.get_mobility(now).get_x()) \
+            + "\nlocation_y: " + str(self.get_mobility(now).get_y()) \
+            + "\nspeed: " + str(self.get_mobility(now).get_speed()) \
+            + "\ndirection: " + str(self.get_mobility(now).get_direction()) \
+            + "\ncomputing_capability: " + str(self.get_computing_capability()) \
+            + "\nstorage_capability: " + str(self.get_storage_capability()) \
+            + "\navailable_computing_capability: " + str(self.get_available_computing_capability(now)) \
+            + "\navailable_storage_capability: " + str(self.get_available_storage_capability(now)) \
+            + "\ntransmission_power: " + str(self.get_transmission_power()) \
+            + "\ncommunication_range: " + str(self.get_communication_range()) \
+            + "\ntask_arrival_rate: " + str(self.get_task_arrival_rate())

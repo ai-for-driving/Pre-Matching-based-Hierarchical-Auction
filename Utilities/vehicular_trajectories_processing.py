@@ -1,6 +1,6 @@
 import sys
 sys.path.append(r"/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/")
-from Objects.mobility import mobility
+from Objects.mobility_object import mobility
 from Utilities.time_calculation import transform_str_data_time_into_timestamp_ms, transform_str_data_time_into_timestamp
 from typing import List, Optional, Tuple
 import pandas as pd
@@ -54,7 +54,7 @@ class TrajectoriesProcessing(object):
         # self._start_times['US-101-SanDiego-CA-1500feet-0805am-0820am'] = '2005-07-19 08:05:00'
         # self._start_times['US-101-SanDiego-CA-1500feet-0820am-0835am'] = '2005-07-19 08:20:00'
         
-        self._file_name_key : str = file_name_key
+        self._file_name_key : Optional[str] = file_name_key
         self._is_ms : bool = True
         
         if self._file_name_key not in self._file_names:
@@ -63,11 +63,11 @@ class TrajectoriesProcessing(object):
             if self._file_name_key == 'Peachtree-Street-Atlanta-GA-2100feet':
                 self._is_ms = False
         
-        self._chunk_size : int = chunk_size
+        self._chunk_size : Optional[int] = chunk_size
         
-        self._vehicle_number : int = vehicle_number
-        self._slection_way : str = slection_way
-        self._filling_way : str = filling_way
+        self._vehicle_number : Optional[int] = vehicle_number
+        self._slection_way : Optional[str] = slection_way
+        self._filling_way : Optional[str] = filling_way
         
         self._vehicle_IDs : List[int] = []
         self._selected_vehicle_IDs : List[int] = []
@@ -80,8 +80,8 @@ class TrajectoriesProcessing(object):
         self._all_data = pd.DataFrame()
         self._min_global_time = 0
         
-        self._start_time : str = start_time
-        self._slot_time_length : int = slot_length
+        self._start_time : Optional[str] = start_time
+        self._slot_time_length : Optional[int] = slot_length
         
         self._start_time_timestamp_ms : int = 0
         self._end_time_timestamp_ms : int = 0

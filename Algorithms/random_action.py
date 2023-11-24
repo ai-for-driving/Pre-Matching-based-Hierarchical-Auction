@@ -1,4 +1,6 @@
 import numpy as np
+import sys
+sys.path.append(r"/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/")
 from Strategy.strategy import action
 
 class RA_agent(object):

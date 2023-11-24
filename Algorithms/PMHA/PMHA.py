@@ -1,9 +1,11 @@
 from typing import List
 import numpy as np
-from Objects.task import task
-from Objects.vehicle import vehicle
-from Objects.edge_node import edge_node
-from Objects.cloud_server import cloud_server
+import sys
+sys.path.append(r"/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/")
+from Objects.task_object import task
+from Objects.vehicle_object import vehicle
+from Objects.edge_node_object import edge_node
+from Objects.cloud_server_object import cloud_server
 from Strategy.strategy import action
 from Algorithms.PMHA.best_k_matching import init_preference_list, best_k_offloading_node_matching, get_connection_time_of_vehicles_under_V2V_communication_range, get_connection_time_of_vehicle_under_V2I_communication_range
 from Algorithms.PMHA.vehicle_edge_auction import init_buyers_and_sellers_at_vehicle_edge_auction, init_bids_and_asks_of_vehicle_edge_auction, resource_allocation_and_pricing
@@ -16,7 +18,7 @@ class PMHA_agent(object):
         k_offloading_node_num: int,
         random_change_matching_probability: float,
         path_loss_exponent: int,
-        white_gaussian_noise: float,
+        white_gaussian_noise: int,
     ) -> None:
         self._k_offloading_node_num = k_offloading_node_num
         self._random_change_matching_probability = random_change_matching_probability
@@ -106,7 +108,7 @@ class PMHA_agent(object):
             now=now,
         )
         
-        print("self._action: \n", self._action)
+        # print("self._action: \n", self._action)
         
         is_vehicle_edge_auction_seller_list_all_empty = True
         for vehicle_edge_auction_sellers in vehicle_edge_auction_seller_list:
@@ -174,6 +176,7 @@ class PMHA_agent(object):
             buyer_key_index=buyer_key_index,
             seller_key_index=seller_key_index,
             offloading_decision=edge_cloud_auction_offloading_decision,
+            action=self._action,
         )
         
         return self._action
