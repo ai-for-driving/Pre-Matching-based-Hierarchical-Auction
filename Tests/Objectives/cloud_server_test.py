@@ -1,7 +1,7 @@
 import sys
 sys.path.append(r"/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/")
 
-from Objects.cloud_server import cloud_server
+from Objects.cloud_server_object import cloud_server
 
 
 def test_cloud_server():

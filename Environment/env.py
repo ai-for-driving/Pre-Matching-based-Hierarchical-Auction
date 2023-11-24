@@ -1,19 +1,21 @@
-from Utilities.noma import obtain_channel_gains_between_client_vehicle_and_server_vehicles, obtain_channel_gains_between_vehicles_and_edge_nodes
-from Utilities.wired_bandwidth import get_wired_bandwidth_between_edge_node_and_other_edge_nodes
-from Environment.env_profile import env_profile
-from Objects.task import task
-from Objects.vehicle import vehicle
-from Objects.edge_node import edge_node
-from Objects.cloud_server import cloud_server
-from Utilities.object_generation import generate_task_set, generate_vehicles, generate_edge_nodes, generate_cloud
-from Utilities.vehicle_classification import get_client_and_server_vehicles
-from Utilities.distance_and_coverage import get_distance_matrix_between_client_vehicles_and_server_vehicles, get_distance_matrix_between_vehicles_and_edge_nodes, get_distance_matrix_between_edge_nodes  
-from Utilities.distance_and_coverage import get_vehicles_under_V2I_communication_range, get_vehicles_under_V2V_communication_range
 from typing import List, Tuple
 import numpy as np
 import time
 import pickle
+import sys
+sys.path.append(r"/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/")
 from Strategy.strategy import action
+from Environment.env_profile import env_profile
+from Utilities.noma import obtain_channel_gains_between_client_vehicle_and_server_vehicles, obtain_channel_gains_between_vehicles_and_edge_nodes
+from Utilities.wired_bandwidth import get_wired_bandwidth_between_edge_node_and_other_edge_nodes
+from Objects.task_object import task
+from Objects.vehicle_object import vehicle
+from Objects.edge_node_object import edge_node
+from Objects.cloud_server_object import cloud_server
+from Utilities.object_generation import generate_task_set, generate_vehicles, generate_edge_nodes, generate_cloud
+from Utilities.vehicle_classification import get_client_and_server_vehicles
+from Utilities.distance_and_coverage import get_distance_matrix_between_client_vehicles_and_server_vehicles, get_distance_matrix_between_vehicles_and_edge_nodes, get_distance_matrix_between_edge_nodes  
+from Utilities.distance_and_coverage import get_vehicles_under_V2I_communication_range, get_vehicles_under_V2V_communication_range
 from Utilities.time_calculation import obtain_computing_time, obtain_transmission_time, obtain_wired_transmission_time
 from Utilities.time_calculation import compute_transmission_rate, compute_V2V_SINR, compute_V2I_SINR
 
@@ -335,13 +337,13 @@ class env(object):
                                     
                                 task_computing_start_time = self._now + np.ceil(task_transmission_time)
                                 task_during_time = np.floor(task_computing_time)
-                                self._edge_nodes[edge_node_index] : edge_node .set_consumed_computing_capability(
+                                self._edge_nodes[edge_node_index].set_consumed_computing_capability(
                                     consumed_computing_capability=allocated_computing_capability,
                                     now=task_computing_start_time,
                                     duration=task_during_time,
                                 )
                                 allocated_storage_capability = task_data_size
-                                self._edge_nodes[edge_node_index] : edge_node .set_consumed_storage_capability(
+                                self._edge_nodes[edge_node_index].set_consumed_storage_capability(
                                     consumed_storage_capability=task_data_size,
                                     now=task_computing_start_time,
                                     duration=task_during_time,
@@ -392,13 +394,13 @@ class env(object):
                                     
                                 task_computing_start_time = self._now + np.ceil(task_transmission_time)
                                 task_during_time = np.floor(task_computing_time)
-                                self._edge_nodes[edge_node_index] : edge_node .set_consumed_computing_capability(
+                                self._edge_nodes[edge_node_index].set_consumed_computing_capability(
                                     consumed_computing_capability=allocated_computing_capability,
                                     now=task_computing_start_time,
                                     duration=task_during_time,
                                 )
                                 allocated_storage_capability = task_data_size
-                                self._edge_nodes[edge_node_index] : edge_node .set_consumed_storage_capability(
+                                self._edge_nodes[edge_node_index].set_consumed_storage_capability(
                                     consumed_storage_capability=task_data_size,
                                     now=task_computing_start_time,
                                     duration=task_during_time,
@@ -447,13 +449,13 @@ class env(object):
                                 
                             task_computing_start_time = self._now + np.ceil(task_transmission_time)
                             task_during_time = np.floor(task_computing_time)
-                            self._cloud : cloud_server .set_consumed_computing_capability(
+                            self._cloud.set_consumed_computing_capability(
                                 consumed_computing_capability=allocated_computing_capability,
                                 now=task_computing_start_time,
                                 duration=task_during_time,
                             )
                             allocated_storage_capability = task_data_size
-                            self._cloud : cloud_server .set_consumed_storage_capability(
+                            self._cloud.set_consumed_storage_capability(
                                 consumed_storage_capability=task_data_size,
                                 now=task_computing_start_time,
                                 duration=task_during_time,

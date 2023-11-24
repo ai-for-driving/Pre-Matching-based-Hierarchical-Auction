@@ -1,10 +1,11 @@
+from typing import Optional
 class auction_buyer(object):
     
     def __init__(
         self,
         buyer_type: str,     #  e.g., "vehicle", "edge node"
         index: int,    #  the index of vehicle or edge node
-        vehicle_indexs: list,    #  the indexs of vehicles
+        vehicle_indexs: Optional[list],    #  the indexs of vehicles
         time_slot_index: int,
         requested_computing_resources: float,       # cycles
         requested_storage_resources: float,         # bits
@@ -13,7 +14,7 @@ class auction_buyer(object):
     ) -> None:
         self._type = buyer_type
         self._index = index
-        self._vehicle_indexs = vehicle_indexs
+        self._vehicle_indexs: Optional[list] = vehicle_indexs
         self._time_slot_index = time_slot_index
         self._requested_computing_resources = requested_computing_resources
         self._requested_storage_resources = requested_storage_resources

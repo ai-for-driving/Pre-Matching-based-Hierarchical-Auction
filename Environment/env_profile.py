@@ -43,7 +43,7 @@ class env_profile(object):
         cloud_distribution: str,
         V2V_bandwidth: float,
         V2I_bandwidth: float,
-        white_gaussian_noise: float,
+        white_gaussian_noise: int,
         path_loss_exponent: int,
     ) -> None:
         self._slot_length: int = slot_length
@@ -88,7 +88,7 @@ class env_profile(object):
         self._cloud_distribution: str = cloud_distribution
         self._V2V_bandwidth: float = V2V_bandwidth
         self._V2I_bandwidth: float = V2I_bandwidth
-        self._white_gaussian_noise: float = white_gaussian_noise
+        self._white_gaussian_noise: int = white_gaussian_noise
         self._path_loss_exponent: int = path_loss_exponent
         
     def get_slot_length(self) -> int:
@@ -217,7 +217,7 @@ class env_profile(object):
     def get_V2I_bandwidth(self) -> float:
         return self._V2I_bandwidth
     
-    def get_white_gaussian_noise(self) -> float:
+    def get_white_gaussian_noise(self) -> int:
         return self._white_gaussian_noise
     
     def get_path_loss_exponent(self) -> int:

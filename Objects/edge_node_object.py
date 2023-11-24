@@ -1,16 +1,16 @@
 from typing import List
-from Objects.mobility import mobility
+from Objects.mobility_object import mobility
 class edge_node(object):
     
     def __init__(
         self,
-        mobility: mobility,       
+        edge_node_mobility: mobility,       
         computing_capability: float,
         storage_capability: float,
         communication_range: float,
         time_slot_num: int,
     ) -> None:
-        self._mobility: mobility = mobility 
+        self._mobility: mobility = edge_node_mobility 
         self._computing_capability: float = computing_capability
         self._time_slot_num: int = time_slot_num
         self._available_computing_capability: List[float] = [self._computing_capability for _ in range(self._time_slot_num)] 

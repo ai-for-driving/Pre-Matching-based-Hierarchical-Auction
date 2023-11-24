@@ -1,10 +1,10 @@
 import random
 from typing import List
-from Objects.task import task
-from Objects.mobility import mobility
-from Objects.vehicle import vehicle
-from Objects.edge_node import edge_node
-from Objects.cloud_server import cloud_server
+from Objects.task_object import task
+from Objects.mobility_object import mobility
+from Objects.vehicle_object import vehicle
+from Objects.edge_node_object import edge_node
+from Objects.cloud_server_object import cloud_server
 from Utilities.vehicular_trajectories_processing import TrajectoriesProcessing
 from Utilities.wired_bandwidth import get_wired_bandwidth_between_edge_nodes_and_the_cloud
 
@@ -139,7 +139,7 @@ def generate_edge_nodes(
             computing_capability = random.uniform(min_computing_capability,max_computing_capability)
             storage_capability = random.uniform(min_storage_capability,max_storage_capability)
             edge_node_obj = edge_node(
-                mobility = mobility_obj, 
+                edge_node_mobility = mobility_obj, 
                 computing_capability = computing_capability, 
                 storage_capability = storage_capability,
                 communication_range = communication_range,

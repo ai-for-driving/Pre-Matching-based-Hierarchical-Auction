@@ -1,9 +1,11 @@
 from typing import List
 import numpy as np
+import sys
+sys.path.append(r"/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/")
 from Algorithms.PMHA.player import auction_buyer, auction_seller
-from Objects.task import task
-from Objects.vehicle import vehicle
-from Objects.edge_node import edge_node
+from Objects.task_object import task
+from Objects.vehicle_object import vehicle
+from Objects.edge_node_object import edge_node
 from Strategy.strategy import action
 from Utilities.conversion import cover_MB_to_bit, cover_GHz_to_Hz, cover_bit_to_MB, cover_Hz_to_GHz
 
@@ -52,7 +54,7 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
         buyers.append(auction_buyer(
             buyer_type="vehicle",
             index=client_vehicle_index,
-            vehicle_indexs=client_vehicle_index,
+            vehicle_indexs=[client_vehicle_index],
             time_slot_index=now,
             requested_computing_resources=requested_computing_resources,
             requested_storage_resources=requested_storage_resources,
@@ -132,7 +134,7 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
 def init_bids_and_asks_of_vehicle_edge_auction(
     buyers_list: List[List[auction_buyer]],
     sellers_list: List[List[auction_seller]],
-) -> List[tuple[List[auction_buyer], List[auction_seller]]]:
+) -> tuple[List[List[auction_buyer]], List[List[auction_seller]]]:
     
     for i in range(len(buyers_list)):
         buyers = buyers_list[i]
@@ -259,6 +261,7 @@ def resource_allocation_and_pricing(
             output_buyers_list[seller_index] = buyers
             output_sellers_list[seller_index] = sellers
         else:
-            raise ValueError("The number of sellers is not 1.")
+            continue
+            # raise ValueError("The number of sellers is not 1.")
         
     return output_action, offloading_decision, output_buyers_list, output_sellers_list

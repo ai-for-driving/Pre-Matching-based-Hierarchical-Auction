@@ -1,10 +1,12 @@
 from typing import List
 import numpy as np
+import sys
+sys.path.append(r"/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/")
 from Algorithms.PMHA.player import auction_buyer, auction_seller
-from Objects.task import task
-from Objects.vehicle import vehicle
-from Objects.edge_node import edge_node
-from Objects.cloud_server import cloud_server
+from Objects.task_object import task
+from Objects.vehicle_object import vehicle
+from Objects.edge_node_object import edge_node
+from Objects.cloud_server_object import cloud_server
 from Strategy.strategy import action
 from Utilities.conversion import cover_MB_to_bit, cover_GHz_to_Hz
 
@@ -96,8 +98,8 @@ def init_buyers_and_sellers_at_edge_cloud_auction(
         seller_type="cloud",
         index=0,
         time_slot_index=now,
-        offered_computing_resources=cover_GHz_to_Hz(cloud.get_available_computing_resources()),
-        offered_storage_resources=cover_MB_to_bit(cloud.get_available_storage_resources()),
+        offered_computing_resources=cover_GHz_to_Hz(cloud.get_available_computing_capability(now=now)),
+        offered_storage_resources=cover_MB_to_bit(cloud.get_available_storage_capability(now=now)),
         ask=0,
         payment=0,
     ))
@@ -204,12 +206,10 @@ def resource_allocation_of_edge_cloud_auction(
                     for vehicle_index in vehicle_indexs:
                         output_action.set_offloading_decision_of_vehicle_to_cloud_node(
                             client_vehicle_index=buyer.get_index(),
-                            cloud_index=seller.get_index(),
                             offloading_decision=1,
                         )
                         output_action.set_computing_resource_decision_of_vehicle_to_cloud_node(
                             client_vehicle_index=buyer.get_index(),
-                            cloud_index=seller.get_index(),
                             computing_resource_decision=requested_computing_resources / offered_computing_resources_copy,
                         )
                 new_buyers.remove(buyer)
@@ -224,6 +224,7 @@ def payment_pricing(
     buyer_key_index: int,
     seller_key_index: int,
     offloading_decision: np.ndarray,
+    action: action,
 ) -> tuple[List[auction_buyer], List[auction_seller]]:
     output_buyers = buyers
     output_sellers = sellers
@@ -237,7 +238,13 @@ def payment_pricing(
                 buyer.set_bid(bid_now)
                 sorted_buyers = sorted(output_buyers, key=lambda x: x.get_bid(), reverse=True)
                 buyer_key_index, seller_key_index = find_key_index(sorted_buyers, output_sellers)
-                offloading_decision = resource_allocation_of_edge_cloud_auction(sorted_buyers, output_sellers, buyer_key_index, seller_key_index, len(output_buyers), len(output_sellers))
+                output_action, offloading_decision = resource_allocation_of_edge_cloud_auction(
+                    sorted_buyers=sorted_buyers,
+                    sorted_sellers=output_sellers,
+                    buyer_key_index=buyer_key_index,
+                    seller_key_index=seller_key_index,
+                    action=action,
+                )
                 if offloading_decision[buyer.get_index()].sum() == 1:
                     bid_low = bid_now
                 else:
