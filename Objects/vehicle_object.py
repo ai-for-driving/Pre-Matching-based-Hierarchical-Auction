@@ -75,20 +75,24 @@ class vehicle(object):
         return [task for task in self._tasks if task[0] == now]
     
     def set_consumed_computing_capability(self, consumed_computing_capability: float, now: int, duration: int) -> None:
+        if now > self._time_slot_num:
+            return None
         if now + duration > self._time_slot_num:
             end_time = self._time_slot_num
         else:
             end_time = now + duration
-        for i in range(now, end_time):
+        for i in range(int(now), int(end_time)):
             self._available_computing_capability[i] = self._available_computing_capability[i] - consumed_computing_capability
         return None
     
     def set_consumed_storage_capability(self, consumed_storage_capability: float, now: int, duration: int) -> None:
+        if now > self._time_slot_num:
+            return None
         if now + duration > self._time_slot_num:
             end_time = self._time_slot_num
         else:
             end_time = now + duration
-        for i in range(now, end_time):
+        for i in range(int(now), int(end_time)):
             self._available_storage_capability[i] = self._available_storage_capability[i] - consumed_storage_capability
         return None
     

@@ -49,14 +49,16 @@ class action(object):
         for i in range(self._offloading_decision.shape[1]):
             if self._offloading_decision[client_vehicle_index][i] != 0:
                 return i
-        raise Exception("No offloading decision of vehicle " + str(client_vehicle_index))
+        return -1
+        # raise Exception("No offloading decision of vehicle " + str(client_vehicle_index))
     
     def get_computing_resource_decision_of_client_vehicle(self, client_vehicle_index: int) -> float:
         self.check_client_vehicle_index(client_vehicle_index)
         for i in range(self._computing_resource_decision.shape[1]):
             if self._computing_resource_decision[client_vehicle_index][i] != 0:
                 return self._computing_resource_decision[client_vehicle_index][i]
-        raise Exception("No computing resource decision of vehicle " + str(client_vehicle_index))
+        return -1
+        # raise Exception("No computing resource decision of vehicle " + str(client_vehicle_index))
     
     def get_offloading_decison_at_local(self) -> np.ndarray:
         return self._offloading_decision[:, 0]

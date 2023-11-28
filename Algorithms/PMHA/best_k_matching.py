@@ -150,6 +150,7 @@ def best_k_offloading_node_matching(
     random_change_matching_probability: float,
     path_loss_exponent: int,
     white_gaussian_noise: int,
+    vehicles_under_V2I_communication_range: np.ndarray,
 ) -> np.ndarray:
     # Initialization
     client_vehicle_num = len(client_vehicles)
@@ -327,4 +328,13 @@ def best_k_offloading_node_matching(
         # print("\nbest_k_nodes")
         # print(best_k_nodes)
     
+    # print("vehicles under V2I communication range")
+    # print(vehicles_under_V2I_communication_range)
+    for client_vehicle_index in range(client_vehicle_num):
+        for edge_node_index in range(edge_node_num):
+            if vehicles_under_V2I_communication_range[client_vehicle_index][edge_node_index] == 1:
+                best_k_nodes[client_vehicle_index][server_vehicle_num + edge_node_index] = 1
+    
+    # print("best_k_nodes")
+    # print(best_k_nodes)
     return best_k_nodes

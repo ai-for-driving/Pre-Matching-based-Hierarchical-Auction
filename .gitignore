@@ -169,3 +169,4 @@ Results/
 Results/*.*
 .DS_Store
 Tests/Utilities/tempCodeRunnerFile.py
+Environment/tempCodeRunnerFile.py

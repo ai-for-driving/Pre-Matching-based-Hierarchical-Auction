@@ -93,6 +93,7 @@ class PMHA_agent(object):
             random_change_matching_probability=self._random_change_matching_probability,
             path_loss_exponent=self._path_loss_exponent,
             white_gaussian_noise=self._white_gaussian_noise,
+            vehicles_under_V2I_communication_range=vehicles_under_V2I_communication_range,
         )
         
         # print("best_k_nodes")
@@ -108,7 +109,7 @@ class PMHA_agent(object):
             now=now,
         )
         
-        # print("self._action: \n", self._action)
+        # print("self._action_1: \n", self._action)
         
         is_vehicle_edge_auction_seller_list_all_empty = True
         for vehicle_edge_auction_sellers in vehicle_edge_auction_seller_list:
@@ -132,6 +133,7 @@ class PMHA_agent(object):
             sellers_list=vehicle_edge_auction_seller_list,
             action=self._action,
         )
+        # print("self._action_2: \n", self._action)
         
         is_edge_cloud_auction_seller_list_all_empty = True
         for vehicle_edge_auction_sellers in vehicle_edge_auction_seller_list:
@@ -151,6 +153,8 @@ class PMHA_agent(object):
             now=now,
         )
         
+        # print("self._action_3: \n", self._action)
+        
         edge_cloud_auction_buyers, edge_cloud_auction_sellers = init_bids_and_asks_of_edge_cloud_auction(
             buyers=edge_cloud_auction_buyers,
             sellers=edge_cloud_auction_sellers,
@@ -169,6 +173,7 @@ class PMHA_agent(object):
             action=self._action,
         )
         
+        # print("self._action_4: \n", self._action)
         
         edge_cloud_auction_buyers, edge_cloud_auction_sellers = payment_pricing(
             buyers=edge_cloud_auction_buyers,

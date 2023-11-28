@@ -200,6 +200,7 @@ class env(object):
         return self._vehicles_under_V2I_communication_range
     
     def step(self, now_action : action) -> None:
+        print("now", self._now)
         if self._now > self._end_time:
             self.save_results()
         else:
@@ -209,16 +210,20 @@ class env(object):
             edge_node_available_computing_capability = [edge_node.get_available_computing_capability(self._now) for edge_node in self._edge_nodes]
             cloud_available_computing_capability = self._cloud.get_available_computing_capability(self._now)
             
-            if now_action.check_validity():
+            # if now_action.check_validity():
                 
-                for client_vehicle_index in range(self._client_vehicle_num):
-                    client_vehicle : vehicle = self._client_vehicles[client_vehicle_index]
-                    tasks : List[Tuple] = client_vehicle.get_tasks_by_time(self._now)
-                    task_offloading_decision = now_action.get_offloading_decision_of_client_vehicle(client_vehicle_index=client_vehicle_index)
-                    computing_resource_decision = now_action.get_computing_resource_decision_of_client_vehicle(client_vehicle_index=client_vehicle_index)
+            for client_vehicle_index in range(self._client_vehicle_num):
+                client_vehicle : vehicle = self._client_vehicles[client_vehicle_index]
+                tasks : List[Tuple] = client_vehicle.get_tasks_by_time(self._now)
+                
+                for task_tuple in tasks:
+                    self._task_num_at_time[self._now] += 1
+                    
+                task_offloading_decision = now_action.get_offloading_decision_of_client_vehicle(client_vehicle_index=client_vehicle_index)
+                computing_resource_decision = now_action.get_computing_resource_decision_of_client_vehicle(client_vehicle_index=client_vehicle_index)
+                if task_offloading_decision != -1:
+                    
                     for task_tuple in tasks:
-                        
-                        self._task_num_at_time[self._now] += 1
                         
                         task_object : task = self._tasks[task_tuple[1]]
                         task_data_size = task_object.get_input_data_size()
@@ -335,8 +340,8 @@ class env(object):
                                 if task_processing_time <= task_deadline:
                                     self._task_successfully_processed_num_at_time[self._now] += 1
                                     
-                                task_computing_start_time = self._now + np.ceil(task_transmission_time)
-                                task_during_time = np.floor(task_computing_time)
+                                task_computing_start_time = self._now + int(np.ceil(task_transmission_time))
+                                task_during_time = int(np.floor(task_computing_time))
                                 self._edge_nodes[edge_node_index].set_consumed_computing_capability(
                                     consumed_computing_capability=allocated_computing_capability,
                                     now=task_computing_start_time,

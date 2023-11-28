@@ -62,10 +62,11 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
             payment=0,
         ))
     
+    
     for server_vehicle_index in range(len(server_vehicles)):
         server_vehicle = server_vehicles[server_vehicle_index]
         sellers.append(auction_seller(
-            seller_type="server_vehicle",
+            seller_type="vehicle",
             index=server_vehicle_index,
             time_slot_index=now,
             offered_computing_resources=cover_GHz_to_Hz(server_vehicle.get_available_computing_capability(now=now)),
@@ -85,6 +86,10 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
             payment=0,
         ))
         
+    # print("*" * 50)
+    # print("buyers: \n", buyers)
+    # print("sellers: \n", sellers)
+        
     # print("output_action: \n", output_action)
     
     output_buyer_list = list()
@@ -102,11 +107,12 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
                         buyer_list.append(buyer)
                         break
         seller_list = list()
-        for seller in sellers:
-            if seller.get_type() == "vehicle" and \
-                seller.get_index() == server_vehicle_index:
-                seller_list.append(seller)
-                break
+        if buyer_list != []:
+            for seller in sellers:
+                if seller.get_type() == "vehicle" and \
+                    seller.get_index() == server_vehicle_index:
+                    seller_list.append(seller)
+                    break
         output_buyer_list.append(buyer_list)
         output_seller_list.append(seller_list)
         
@@ -120,13 +126,18 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
                         buyer_list.append(buyer)
                         break
         seller_list = list()
-        for seller in sellers:
-            if seller.get_type() == "edge_node" and \
-                seller.get_index() == edge_node_index:
-                seller_list.append(seller)
-                break
+        if buyer_list != []:
+            for seller in sellers:
+                if seller.get_type() == "edge_node" and \
+                    seller.get_index() == edge_node_index:
+                    seller_list.append(seller)
+                    break
         output_buyer_list.append(buyer_list)
         output_seller_list.append(seller_list)
+        
+    # print("*" * 50)
+    # print("output_buyer_list: \n", output_buyer_list)
+    # print("output_seller_list: \n", output_seller_list)
     
     return output_action, output_buyer_list, output_seller_list
     
@@ -173,7 +184,7 @@ def resource_allocation_and_pricing(
         if len(sellers) == 1:
             requested_computing_resources = 0
             requested_storage_resources = 0
-            if sellers[0].get_type() == "server_vehicle":
+            if sellers[0].get_type() == "vehicle":
                 for buyer in buyers:
                     requested_computing_resources += buyer.get_requested_computing_resources()
                     requested_storage_resources += buyer.get_requested_storage_resources()
@@ -193,7 +204,9 @@ def resource_allocation_and_pricing(
         else:
             continue
             # raise ValueError("The number of sellers is not 1.")
-        
+            
+    # print("offloading_decision: \n", offloading_decision)
+    
     for client_vehicle_index in range(client_vehicle_number):
         min_ask = 1
         min_index = -1
