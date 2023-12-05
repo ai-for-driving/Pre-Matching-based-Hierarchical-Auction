@@ -26,6 +26,21 @@ class task(object):
     def get_requested_computing_resources(self) -> float:
         return self._cqu_cycles * cover_MB_to_bit(self._input_data_size) / self._deadline
     
+    def get_requested_computing_resources_at_local(self) -> float:
+        return self._cqu_cycles * cover_MB_to_bit(self._input_data_size) / (self._deadline - 0.01)
+    
+    def get_requested_computing_resources_at_vehicle(self) -> float:
+        return self._cqu_cycles * cover_MB_to_bit(self._input_data_size) / (self._deadline / 2)
+    
+    def get_requested_computing_resources_at_local_edge(self) -> float:
+        return self._cqu_cycles * cover_MB_to_bit(self._input_data_size) / (self._deadline / 4)
+    
+    def get_requested_computing_resources_at_other_edge(self) -> float:
+        return self._cqu_cycles * cover_MB_to_bit(self._input_data_size) / (self._deadline / 5)
+    
+    def get_requested_computing_resources_at_cloud(self) -> float:
+        return self._cqu_cycles * cover_MB_to_bit(self._input_data_size) / (self._deadline / 10)
+    
     def __str__(self) -> str:
         return "Input data size: " + str(self._input_data_size) + "\nCqu cycles: " + str(self._cqu_cycles) + "\nDeadline: " + str(self._deadline) + "\nRequested computing resources: " + str(cover_Hz_to_GHz(self.get_requested_computing_resources())) + "\n"
         

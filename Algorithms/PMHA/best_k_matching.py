@@ -21,6 +21,9 @@ def get_connection_time_of_vehicles_under_V2V_communication_range(
     for i in range(len(client_vehicles)):
         for j in range(len(server_vehicles)):
             if i != j:
+                
+                # TODO: RuntimeWarning: divide by zero encountered in scalar divide connection_time[i][j] = (client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed + vj_speed)
+                
                 if vehicles_under_V2V_communication_range[i][j] == 1:
                     vi_direction = client_vehicles[i].get_mobility(now=now).get_direction()
                     vj_direction = server_vehicles[j].get_mobility(now=now).get_direction()
@@ -34,9 +37,31 @@ def get_connection_time_of_vehicles_under_V2V_communication_range(
                                 type="vehicles"
                             )
                             if distance < distance_matrix[i][j]:
-                                connection_time[i][j] = (client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed - vj_speed)
+                                try:
+                                    connection_time[i][j] = (client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed - vj_speed)
+                                except RuntimeWarning:
+                                    print("type 1")
+                                    print("client_vehicles[i].get_communication_range():", client_vehicles[i].get_communication_range())
+                                    print("distance_matrix[i][j]:", distance_matrix[i][j])
+                                    print("vi_speed:", vi_speed)
+                                    print("vj_speed:", vj_speed)
+                                    print("vi_speed - vj_speed:", vi_speed - vj_speed)
+                                    print("np.abs(vi_speed - vj_speed):", np.abs(vi_speed - vj_speed))
+                                    print("client_vehicles[i].get_communication_range() - distance_matrix[i][j]:", client_vehicles[i].get_communication_range() - distance_matrix[i][j])
+                                    print("(client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed - vj_speed):", (client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed - vj_speed))
                             else:
-                                connection_time[i][j] = (client_vehicles[i].get_communication_range() + distance_matrix[i][j]) / np.abs(vi_speed - vj_speed)
+                                try:
+                                    connection_time[i][j] = (client_vehicles[i].get_communication_range() + distance_matrix[i][j]) / np.abs(vi_speed - vj_speed)
+                                except RuntimeWarning:
+                                    print("type 2")
+                                    print("client_vehicles[i].get_communication_range():", client_vehicles[i].get_communication_range())
+                                    print("distance_matrix[i][j]:", distance_matrix[i][j])
+                                    print("vi_speed:", vi_speed)
+                                    print("vj_speed:", vj_speed)
+                                    print("vi_speed - vj_speed:", vi_speed - vj_speed)
+                                    print("np.abs(vi_speed - vj_speed):", np.abs(vi_speed - vj_speed))
+                                    print("client_vehicles[i].get_communication_range() + distance_matrix[i][j]:", client_vehicles[i].get_communication_range() + distance_matrix[i][j])
+                                    print("(client_vehicles[i].get_communication_range() + distance_matrix[i][j]) / np.abs(vi_speed - vj_speed):", (client_vehicles[i].get_communication_range() + distance_matrix[i][j]) / np.abs(vi_speed - vj_speed))
                         else:
                             distance = calculate_distance(
                                 client_vehicles[i].get_mobility(now + 1),
@@ -44,7 +69,18 @@ def get_connection_time_of_vehicles_under_V2V_communication_range(
                                 type="vehicles"
                             )
                             if distance_matrix[i][j] < distance:
-                                connection_time[i][j] = (client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed - vj_speed)
+                                try:
+                                    connection_time[i][j] = (client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed - vj_speed)
+                                except RuntimeWarning:
+                                    print("type 3")
+                                    print("client_vehicles[i].get_communication_range():", client_vehicles[i].get_communication_range())
+                                    print("distance_matrix[i][j]:", distance_matrix[i][j])
+                                    print("vi_speed:", vi_speed)
+                                    print("vj_speed:", vj_speed)
+                                    print("vi_speed - vj_speed:", vi_speed - vj_speed)
+                                    print("np.abs(vi_speed - vj_speed):", np.abs(vi_speed - vj_speed))
+                                    print("client_vehicles[i].get_communication_range() - distance_matrix[i][j]:", client_vehicles[i].get_communication_range() - distance_matrix[i][j])
+                                    print("(client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed - vj_speed):", (client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed - vj_speed))
                             else:
                                 connection_time[i][j] = (client_vehicles[i].get_communication_range() + distance_matrix[i][j]) / np.abs(vi_speed - vj_speed)
                     else:   # 两车不同向
@@ -55,9 +91,31 @@ def get_connection_time_of_vehicles_under_V2V_communication_range(
                                 type="vehicles"
                             )
                             if distance < distance_matrix[i][j]:
-                                connection_time[i][j] = (client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed + vj_speed)
+                                try:
+                                    connection_time[i][j] = (client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed + vj_speed)
+                                except RuntimeWarning:
+                                    print("type 4")
+                                    print("client_vehicles[i].get_communication_range():", client_vehicles[i].get_communication_range())
+                                    print("distance_matrix[i][j]:", distance_matrix[i][j])
+                                    print("vi_speed:", vi_speed)
+                                    print("vj_speed:", vj_speed)
+                                    print("vi_speed + vj_speed:", vi_speed + vj_speed)
+                                    print("np.abs(vi_speed + vj_speed):", np.abs(vi_speed + vj_speed))
+                                    print("client_vehicles[i].get_communication_range() - distance_matrix[i][j]:", client_vehicles[i].get_communication_range() - distance_matrix[i][j])
+                                    print("(client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed + vj_speed):", (client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed + vj_speed))
                             else:
-                                connection_time[i][j] = (client_vehicles[i].get_communication_range() + distance_matrix[i][j]) / np.abs(vi_speed + vj_speed)
+                                try:
+                                    connection_time[i][j] = (client_vehicles[i].get_communication_range() + distance_matrix[i][j]) / np.abs(vi_speed + vj_speed)
+                                except RuntimeWarning:
+                                    print("type 5")
+                                    print("client_vehicles[i].get_communication_range():", client_vehicles[i].get_communication_range())
+                                    print("distance_matrix[i][j]:", distance_matrix[i][j])
+                                    print("vi_speed:", vi_speed)
+                                    print("vj_speed:", vj_speed)
+                                    print("vi_speed + vj_speed:", vi_speed + vj_speed)
+                                    print("np.abs(vi_speed + vj_speed):", np.abs(vi_speed + vj_speed))
+                                    print("client_vehicles[i].get_communication_range() + distance_matrix[i][j]:", client_vehicles[i].get_communication_range() + distance_matrix[i][j])
+                                    print("(client_vehicles[i].get_communication_range() + distance_matrix[i][j]) / np.abs(vi_speed + vj_speed):", (client_vehicles[i].get_communication_range() + distance_matrix[i][j]) / np.abs(vi_speed + vj_speed))
                         else:
                             distance = calculate_distance(
                                 client_vehicles[i].get_mobility(now + 1),
@@ -65,9 +123,31 @@ def get_connection_time_of_vehicles_under_V2V_communication_range(
                                 type="vehicles"
                             )
                             if distance_matrix[i][j] < distance:
-                                connection_time[i][j] = (client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed + vj_speed)
+                                try:
+                                    connection_time[i][j] = (client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed + vj_speed)
+                                except RuntimeWarning:
+                                    print("type 6")
+                                    print("client_vehicles[i].get_communication_range():", client_vehicles[i].get_communication_range())
+                                    print("distance_matrix[i][j]:", distance_matrix[i][j])
+                                    print("vi_speed:", vi_speed)
+                                    print("vj_speed:", vj_speed)
+                                    print("vi_speed + vj_speed:", vi_speed + vj_speed)
+                                    print("np.abs(vi_speed + vj_speed):", np.abs(vi_speed + vj_speed))
+                                    print("client_vehicles[i].get_communication_range() - distance_matrix[i][j]:", client_vehicles[i].get_communication_range() - distance_matrix[i][j])
+                                    print("(client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed + vj_speed):", (client_vehicles[i].get_communication_range() - distance_matrix[i][j]) / np.abs(vi_speed + vj_speed))
                             else:
-                                connection_time[i][j] = (client_vehicles[i].get_communication_range() + distance_matrix[i][j]) / np.abs(vi_speed + vj_speed)
+                                try:
+                                    connection_time[i][j] = (client_vehicles[i].get_communication_range() + distance_matrix[i][j]) / np.abs(vi_speed + vj_speed)
+                                except RuntimeWarning:
+                                    print("type 7")
+                                    print("client_vehicles[i].get_communication_range():", client_vehicles[i].get_communication_range())
+                                    print("distance_matrix[i][j]:", distance_matrix[i][j])
+                                    print("vi_speed:", vi_speed)
+                                    print("vj_speed:", vj_speed)
+                                    print("vi_speed + vj_speed:", vi_speed + vj_speed)
+                                    print("np.abs(vi_speed + vj_speed):", np.abs(vi_speed + vj_speed))
+                                    print("client_vehicles[i].get_communication_range() + distance_matrix[i][j]:", client_vehicles[i].get_communication_range() + distance_matrix[i][j])
+                                    print("(client_vehicles[i].get_communication_range() + distance_matrix[i][j]) / np.abs(vi_speed + vj_speed):", (client_vehicles[i].get_communication_range() + distance_matrix[i][j]) / np.abs(vi_speed + vj_speed))
     return connection_time
 
 def get_connection_time_of_vehicle_under_V2I_communication_range(

@@ -8,6 +8,11 @@ class auction_buyer(object):
         vehicle_indexs: Optional[list],    #  the indexs of vehicles
         time_slot_index: int,
         requested_computing_resources: float,       # cycles
+        requested_computing_resources_at_local: Optional[float],       # cycles
+        requested_computing_resources_at_vehicle: Optional[float],        # cycles
+        requested_computing_resources_at_local_edge: Optional[float],     # cycles
+        requested_computing_resources_at_other_edge: Optional[float],     # cycles
+        requested_computing_resources_at_cloud: Optional[float],          # cycles
         requested_storage_resources: float,         # bits
         bid: float,
         payment: float,
@@ -17,6 +22,11 @@ class auction_buyer(object):
         self._vehicle_indexs: Optional[list] = vehicle_indexs
         self._time_slot_index = time_slot_index
         self._requested_computing_resources = requested_computing_resources
+        self._requested_computing_resources_at_local = requested_computing_resources_at_local
+        self._requested_computing_resources_at_vehicle = requested_computing_resources_at_vehicle
+        self._requested_computing_resources_at_local_edge = requested_computing_resources_at_local_edge
+        self._requested_computing_resources_at_other_edge = requested_computing_resources_at_other_edge
+        self._requested_computing_resources_at_cloud = requested_computing_resources_at_cloud
         self._requested_storage_resources = requested_storage_resources
         self._bid = bid
         self._payment = payment
@@ -32,6 +42,21 @@ class auction_buyer(object):
     
     def get_requested_computing_resources(self) -> float:
         return self._requested_computing_resources
+    
+    def get_requested_computing_resources_at_local(self) -> float:
+        return self._requested_computing_resources_at_local
+    
+    def get_requested_computing_resources_at_vehicle(self) -> float:
+        return self._requested_computing_resources_at_vehicle
+    
+    def get_requested_computing_resources_at_local_edge(self) -> float:
+        return self._requested_computing_resources_at_local_edge
+    
+    def get_requested_computing_resources_at_other_edge(self) -> float:
+        return self._requested_computing_resources_at_other_edge
+    
+    def get_requested_computing_resources_at_cloud(self) -> float:
+        return self._requested_computing_resources_at_cloud
     
     def get_requested_storage_resources(self) -> float:
         return self._requested_storage_resources
@@ -57,6 +82,21 @@ class auction_buyer(object):
     def set_requested_computing_resources(self, requested_computing_resources: float) -> None:
         self._requested_computing_resources = requested_computing_resources
         
+    def set_requested_computing_resources_at_local(self, requested_computing_resources_at_local: float) -> None:
+        self._requested_computing_resources_at_local = requested_computing_resources_at_local
+        
+    def set_requested_computing_resources_at_vehicle(self, requested_computing_resources_at_vehicle: float) -> None:
+        self._requested_computing_resources_at_vehicle = requested_computing_resources_at_vehicle
+        
+    def set_requested_computing_resources_at_local_edge(self, requested_computing_resources_at_local_edge: float) -> None:
+        self._requested_computing_resources_at_local_edge = requested_computing_resources_at_local_edge
+        
+    def set_requested_computing_resources_at_other_edge(self, requested_computing_resources_at_other_edge: float) -> None:
+        self._requested_computing_resources_at_other_edge = requested_computing_resources_at_other_edge
+        
+    def set_requested_computing_resources_at_cloud(self, requested_computing_resources_at_cloud: float) -> None:
+        self._requested_computing_resources_at_cloud = requested_computing_resources_at_cloud
+        
     def set_requested_storage_resources(self, requested_storage_resources: float) -> None:
         self._requested_storage_resources = requested_storage_resources
     
@@ -70,12 +110,17 @@ class auction_buyer(object):
         self._vehicle_indexs = vehicle_indexs
         
     def __str__(self) -> str:
-        return "Buyer type: {}, index: {}, vehicle_index: {}, time slot index: {}, requested computing resources: {}, requested storage resources: {}, bid: {}, payment: {}".format(
+        return "Buyer type: {}, index: {}, vehicle_indexs: {}, time slot index: {}, requested computing resources: {}, requested computing resources at local: {}, requested computing resources at vehicle: {}, requested computing resources at local edge: {}, requested computing resources at other edge: {}, requested computing resources at cloud: {}, requested storage resources: {}, bid: {}, payment: {}".format(
             self._type,
             self._index,
             self._vehicle_indexs,
             self._time_slot_index,
             self._requested_computing_resources,
+            self._requested_computing_resources_at_local,
+            self._requested_computing_resources_at_vehicle,
+            self._requested_computing_resources_at_local_edge,
+            self._requested_computing_resources_at_other_edge,
+            self._requested_computing_resources_at_cloud,
             self._requested_storage_resources,
             self._bid,
             self._payment,

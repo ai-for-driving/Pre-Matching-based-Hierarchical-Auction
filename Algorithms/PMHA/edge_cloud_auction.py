@@ -10,6 +10,8 @@ from Objects.cloud_server_object import cloud_server
 from Strategy.strategy import action
 from Utilities.conversion import cover_MB_to_bit, cover_GHz_to_Hz
 
+# TODO: check the buyers and sellers
+
 def init_buyers_and_sellers_at_edge_cloud_auction(
     client_vehicles: List[vehicle],
     edge_nodes: List[edge_node],
@@ -31,9 +33,19 @@ def init_buyers_and_sellers_at_edge_cloud_auction(
                 for task_tuple in tasks_list:
                     tasks_tuple_list.append((client_vehicle_index, task_tuple[1]))
         requested_computing_resources = 0       # cycles
+        requested_computing_resources_at_local = 0       # cycles
+        requested_computing_resources_at_vehicle = 0        # cycles
+        requested_computing_resources_at_local_edge = 0     # cycles
+        requested_computing_resources_at_other_edge = 0     # cycles
+        requested_computing_resources_at_cloud = 0          # cycles
         requested_storage_resources = 0         # bits
         for task_tuple in tasks_tuple_list:
             requested_computing_resources += tasks[task_tuple[1]].get_requested_computing_resources()
+            requested_computing_resources_at_local += tasks[task_tuple[1]].get_requested_computing_resources_at_local()
+            requested_computing_resources_at_vehicle += tasks[task_tuple[1]].get_requested_computing_resources_at_vehicle()
+            requested_computing_resources_at_local_edge += tasks[task_tuple[1]].get_requested_computing_resources_at_local_edge()
+            requested_computing_resources_at_other_edge += tasks[task_tuple[1]].get_requested_computing_resources_at_other_edge()
+            requested_computing_resources_at_cloud += tasks[task_tuple[1]].get_requested_computing_resources_at_cloud()
             requested_storage_resources += cover_MB_to_bit(tasks[task_tuple[1]].get_input_data_size())
         
         vehicle_indexs = list()
@@ -41,7 +53,7 @@ def init_buyers_and_sellers_at_edge_cloud_auction(
         edge_node_available_storage_capability = cover_MB_to_bit(edge_node.get_available_storage_capability(now=now))
         
         for task_tuple in tasks_tuple_list:
-            if tasks[task_tuple[1]].get_requested_computing_resources() < cover_GHz_to_Hz(edge_node.get_available_computing_capability(now=now)) and \
+            if tasks[task_tuple[1]].get_requested_computing_resources_at_local_edge() < cover_GHz_to_Hz(edge_node.get_available_computing_capability(now=now)) and \
                 cover_MB_to_bit(tasks[task_tuple[1]].get_input_data_size()) < cover_MB_to_bit(edge_node.get_available_storage_capability(now=now)):
                 output_action.set_offloading_decision_of_vehicle_to_edge_node(
                     client_vehicle_index=task_tuple[0],
@@ -51,12 +63,14 @@ def init_buyers_and_sellers_at_edge_cloud_auction(
                 output_action.set_computing_resource_decision_of_vehicle_to_edge_node(
                     client_vehicle_index=task_tuple[0],
                     edge_node_index=edge_node_index,
-                    computing_resource_decision=tasks[task_tuple[1]].get_requested_computing_resources() / cover_GHz_to_Hz(edge_node.get_available_computing_capability(now=now)),
+                    computing_resource_decision=tasks[task_tuple[1]].get_requested_computing_resources_at_local_edge() / cover_GHz_to_Hz(edge_node.get_available_computing_capability(now=now)),
                 )
-                requested_computing_resources -= tasks[task_tuple[1]].get_requested_computing_resources()
+                requested_computing_resources_at_local_edge -= tasks[task_tuple[1]].get_requested_computing_resources_at_local_edge()
+                requested_computing_resources_at_other_edge -= tasks[task_tuple[1]].get_requested_computing_resources_at_other_edge()
+                requested_computing_resources_at_cloud -= tasks[task_tuple[1]].get_requested_computing_resources_at_cloud()
                 requested_storage_resources -= cover_MB_to_bit(tasks[task_tuple[1]].get_input_data_size())
                 
-                edge_node_available_computing_capability -= tasks[task_tuple[1]].get_requested_computing_resources()
+                edge_node_available_computing_capability -= tasks[task_tuple[1]].get_requested_computing_resources_at_local_edge()
                 edge_node_available_storage_capability -= cover_MB_to_bit(tasks[task_tuple[1]].get_input_data_size())
                 
             else:
@@ -72,13 +86,18 @@ def init_buyers_and_sellers_at_edge_cloud_auction(
                 )
                 vehicle_indexs.append(task_tuple[0])
         
-        if requested_computing_resources > 0 and requested_storage_resources > 0:
+        if (requested_computing_resources_at_other_edge > 0 or requested_computing_resources_at_cloud > 0) and requested_storage_resources > 0:
             buyers.append(auction_buyer(
                 buyer_type="edge_node",
                 index=edge_node_index,
                 vehicle_indexs=vehicle_indexs,
                 time_slot_index=now,
                 requested_computing_resources=requested_computing_resources,
+                requested_computing_resources_at_local=requested_computing_resources_at_local,
+                requested_computing_resources_at_vehicle=requested_computing_resources_at_vehicle,
+                requested_computing_resources_at_local_edge=requested_computing_resources_at_local_edge,
+                requested_computing_resources_at_other_edge=requested_computing_resources_at_other_edge,
+                requested_computing_resources_at_cloud=requested_computing_resources_at_cloud,
                 requested_storage_resources=requested_storage_resources,
                 bid=0,
                 payment=0,
@@ -184,8 +203,13 @@ def resource_allocation_of_edge_cloud_auction(
                 seller_key_index = seller_index - 1
                 break
         for buyer_index in range(len(new_buyers)):
-            requested_computing_resources = new_buyers[buyer_index].get_requested_computing_resources()
-            requested_storage_resources = new_buyers[buyer_index].get_requested_storage_resources()
+            if new_sellers[seller_index].get_type() == "edge_node":
+                requested_computing_resources = new_buyers[buyer_index].get_requested_computing_resources_at_other_edge()
+                requested_storage_resources = new_buyers[buyer_index].get_requested_storage_resources()
+            elif new_sellers[seller_index].get_type() == "cloud":
+                requested_computing_resources = new_buyers[buyer_index].get_requested_computing_resources_at_cloud()
+                requested_storage_resources = new_buyers[buyer_index].get_requested_storage_resources()
+            
             if offered_computing_resources >= requested_computing_resources and offered_storage_resources >= requested_storage_resources:
                 offloading_decision[buyer_index][seller_index] = 1
                 if new_sellers[seller_index].get_type() == "edge_node":

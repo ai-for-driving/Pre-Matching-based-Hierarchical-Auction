@@ -17,7 +17,8 @@ from Utilities.vehicle_classification import get_client_and_server_vehicles
 from Utilities.distance_and_coverage import get_distance_matrix_between_client_vehicles_and_server_vehicles, get_distance_matrix_between_vehicles_and_edge_nodes, get_distance_matrix_between_edge_nodes  
 from Utilities.distance_and_coverage import get_vehicles_under_V2I_communication_range, get_vehicles_under_V2V_communication_range
 from Utilities.time_calculation import obtain_computing_time, obtain_transmission_time, obtain_wired_transmission_time
-from Utilities.time_calculation import compute_transmission_rate, compute_V2V_SINR, compute_V2I_SINR
+from Utilities.time_calculation import compute_transmission_rate, compute_V2V_SINR, compute_V2I_SINR, compute_INR, compute_S
+from Utilities.conversion import cover_mW_to_W
 
 class env(object):
     
@@ -41,6 +42,12 @@ class env(object):
         self._task_processed_at_other_edge_at_time = [0 for _ in range(profile.get_slot_length())]
         self._task_processed_at_cloud_at_time = [0 for _ in range(profile.get_slot_length())]
         self._task_successfully_processed_num_at_time = [0 for _ in range(profile.get_slot_length())]
+        self._task_successfully_processed_num_at_local_at_time = [0 for _ in range(profile.get_slot_length())]
+        self._task_successfully_processed_num_at_vehicle_at_time = [0 for _ in range(profile.get_slot_length())]
+        self._task_successfully_processed_num_at_edge_at_time = [0 for _ in range(profile.get_slot_length())]
+        self._task_successfully_processed_num_at_local_edge_at_time = [0 for _ in range(profile.get_slot_length())]
+        self._task_successfully_processed_num_at_other_edge_at_time = [0 for _ in range(profile.get_slot_length())]
+        self._task_successfully_processed_num_at_cloud_at_time = [0 for _ in range(profile.get_slot_length())]
         
         self._resutls_file_name = "/Users/neardws/Documents/GitHub/Pre-Matching-based-Hierarchical-Auction/Results/" \
             + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + ".txt"
@@ -104,6 +111,8 @@ class env(object):
             transmission_rate=profile.get_I2I_transmission_rate(),
             distance_matrix=self._distance_matrix_between_edge_nodes,
         )
+        # print("distance_matrix_between_edge_nodes:\n", self._distance_matrix_between_edge_nodes)
+        # print("wired_bandwidths_between_edge_node_and_other_edge_nodes:\n", self._wired_bandwidths_between_edge_node_and_other_edge_nodes)
                 
         self._cloud : cloud_server = generate_cloud(
             computing_capability=profile.get_cloud_computing_capability(),
@@ -131,21 +140,32 @@ class env(object):
             server_vehicles=self._server_vehicles,
             now=self._now,
         )
+        
+        # print("self._distance_matrix_between_client_vehicles_and_server_vehicles:\n", self._distance_matrix_between_client_vehicles_and_server_vehicles)
+        
         self._distance_matrix_between_client_vehicles_and_edge_nodes : np.ndarray = get_distance_matrix_between_vehicles_and_edge_nodes(
             client_vehicles=self._client_vehicles,
             edge_nodes=self._edge_nodes,
             now=self._now,
         )
+        
+        # print("self._distance_matrix_between_client_vehicles_and_edge_nodes:\n", self._distance_matrix_between_client_vehicles_and_edge_nodes)
+        
         self._vehicles_under_V2V_communication_range : np.ndarray = get_vehicles_under_V2V_communication_range(
             distance_matrix=self._distance_matrix_between_client_vehicles_and_server_vehicles,
             client_vehicles=self._client_vehicles,
             server_vehicles=self._server_vehicles,
         )
+        
+        # print("self._vehicles_under_V2V_communication_range:\n", self._vehicles_under_V2V_communication_range)
+        
         self._vehicles_under_V2I_communication_range : np.ndarray = get_vehicles_under_V2I_communication_range(
             client_vehicles=self._client_vehicles,
             edge_nodes=self._edge_nodes,
             now=self._now,
         )
+        
+        # print("self._vehicles_under_V2I_communication_range:\n", self._vehicles_under_V2I_communication_range)
         
         self._channel_gains_between_client_vehicle_and_server_vehicles = obtain_channel_gains_between_client_vehicle_and_server_vehicles(
             distance_matrix=self._distance_matrix_between_client_vehicles_and_server_vehicles,
@@ -154,12 +174,16 @@ class env(object):
             path_loss_exponent=self._env_profile.get_path_loss_exponent(),
         )
         
+        # print("self._channel_gains_between_client_vehicle_and_server_vehicles:\n", self._channel_gains_between_client_vehicle_and_server_vehicles)
+        
         self._channel_gains_between_client_vehicle_and_edge_nodes = obtain_channel_gains_between_vehicles_and_edge_nodes(
             distance_matrix=self._distance_matrix_between_client_vehicles_and_edge_nodes,
             client_vehicles=self._client_vehicles,
             edge_nodes=self._edge_nodes,
             path_loss_exponent=self._env_profile.get_path_loss_exponent(),
         )
+        
+        # print("self._channel_gains_between_client_vehicle_and_edge_nodes:\n", self._channel_gains_between_client_vehicle_and_edge_nodes)
         
         return None
     
@@ -249,7 +273,15 @@ class env(object):
                             )
                             task_processing_time = task_transmission_time + task_computing_time
                             
+                            # print("*"*32)
+                            # print("processing at local")
+                            # print("task_transmission_time: ", task_transmission_time)
+                            # print("task_computing_time: ", task_computing_time)
+                            # print("task_processing_time: ", task_processing_time)
+                            # print("task_deadline: ", task_deadline)
+                            
                             if task_processing_time <= task_deadline:
+                                self._task_successfully_processed_num_at_local_at_time[self._now] += 1
                                 self._task_successfully_processed_num_at_time[self._now] += 1
                             
                             task_during_time = np.floor(task_computing_time).astype('int')
@@ -287,7 +319,15 @@ class env(object):
                                 )
                                 task_processing_time = task_transmission_time + task_computing_time
                                 
+                                # print("*"*32)
+                                # print("processing at vehicle")
+                                # print("task_transmission_time: ", task_transmission_time)
+                                # print("task_computing_time: ", task_computing_time)
+                                # print("task_processing_time: ", task_processing_time)
+                                # print("task_deadline: ", task_deadline)
+                                
                                 if task_processing_time <= task_deadline:
+                                    self._task_successfully_processed_num_at_vehicle_at_time[self._now] += 1
                                     self._task_successfully_processed_num_at_time[self._now] += 1
                                 
                                 task_computing_start_time = self._now + np.ceil(task_transmission_time)
@@ -337,7 +377,16 @@ class env(object):
                                 
                                 task_processing_time = task_transmission_time + task_computing_time
                                 
+                                # print("*"*32)
+                                # print("processing at local edge")
+                                # print("task_transmission_time: ", task_transmission_time)
+                                # print("task_computing_time: ", task_computing_time)
+                                # print("task_processing_time: ", task_processing_time)
+                                # print("task_deadline: ", task_deadline)
+                                
                                 if task_processing_time <= task_deadline:
+                                    self._task_successfully_processed_num_at_edge_at_time[self._now] += 1
+                                    self._task_successfully_processed_num_at_local_edge_at_time[self._now] += 1
                                     self._task_successfully_processed_num_at_time[self._now] += 1
                                     
                                 task_computing_start_time = self._now + int(np.ceil(task_transmission_time))
@@ -394,7 +443,18 @@ class env(object):
                                 
                                 task_processing_time = task_transmission_time + task_computing_time
                                 
+                                # print("*"*32)
+                                # print("processing at other edge")
+                                # print("task_v2i_transmission_time: ", task_v2i_transmission_time)
+                                # print("task_i2i_transmission_time: ", task_i2i_transmission_time)
+                                # print("task_transmission_time: ", task_transmission_time)
+                                # print("task_computing_time: ", task_computing_time)
+                                # print("task_processing_time: ", task_processing_time)
+                                # print("task_deadline: ", task_deadline)
+                                
                                 if task_processing_time <= task_deadline:
+                                    self._task_successfully_processed_num_at_edge_at_time[self._now] += 1
+                                    self._task_successfully_processed_num_at_other_edge_at_time[self._now] += 1
                                     self._task_successfully_processed_num_at_time[self._now] += 1
                                     
                                 task_computing_start_time = self._now + np.ceil(task_transmission_time)
@@ -449,7 +509,18 @@ class env(object):
                             )
                             
                             task_processing_time = task_transmission_time + task_computing_time
+                            
+                            # print("*"*32)
+                            # print("processing at cloud")
+                            # print("task_v2i_transmission_time: ", task_v2i_transmission_time)
+                            # print("task_i2c_transmission_time: ", task_i2c_transmission_time)
+                            # print("task_transmission_time: ", task_transmission_time)
+                            # print("task_computing_time: ", task_computing_time)
+                            # print("task_processing_time: ", task_processing_time)
+                            # print("task_deadline: ", task_deadline)
+                            
                             if task_processing_time <= task_deadline:
+                                self._task_successfully_processed_num_at_cloud_at_time[self._now] += 1
                                 self._task_successfully_processed_num_at_time[self._now] += 1
                                 
                             task_computing_start_time = self._now + np.ceil(task_transmission_time)
@@ -498,17 +569,17 @@ class env(object):
                     np.abs(self._channel_gains_between_client_vehicle_and_server_vehicles[client_vehicle_index][server_vehicle_index]) ** 2:
                     intra_vehicle_interference += \
                         np.abs(self._channel_gains_between_client_vehicle_and_server_vehicles[other_client_vehicle_index][server_vehicle_index]) ** 2 * \
-                            self._client_vehicles[other_client_vehicle_index].get_transmission_power()
+                            cover_mW_to_W(self._client_vehicles[other_client_vehicle_index].get_transmission_power())
                             
         inter_vehicle_interference = 0
-        for other_server_vehicle_index in range(self._server_vehicle_num):
-            if other_server_vehicle_index != server_vehicle_index:
-                client_vehicle_index_list = now_action.get_offloading_decision_at_server_vehicle(other_server_vehicle_index)
-                for other_client_vehicle_index in client_vehicle_index_list:
-                    if other_client_vehicle_index != client_vehicle_index:
-                        inter_vehicle_interference += \
-                            np.abs(self._channel_gains_between_client_vehicle_and_server_vehicles[other_client_vehicle_index][server_vehicle_index]) ** 2 * \
-                                self._client_vehicles[other_client_vehicle_index].get_transmission_power()
+        # for other_server_vehicle_index in range(self._server_vehicle_num):
+        #     if other_server_vehicle_index != server_vehicle_index:
+        #         client_vehicle_index_list = now_action.get_offloading_decision_at_server_vehicle(other_server_vehicle_index)
+        #         for other_client_vehicle_index in client_vehicle_index_list:
+        #             if other_client_vehicle_index != client_vehicle_index:
+        #                 inter_vehicle_interference += \
+        #                     np.abs(self._channel_gains_between_client_vehicle_and_server_vehicles[other_client_vehicle_index][server_vehicle_index]) ** 2 * \
+        #                         cover_mW_to_W(self._client_vehicles[other_client_vehicle_index].get_transmission_power())
         
         sinr = compute_V2V_SINR(
             white_gaussian_noise=self._env_profile.get_white_gaussian_noise(),
@@ -545,18 +616,35 @@ class env(object):
                 if np.abs(self._channel_gains_between_client_vehicle_and_edge_nodes[other_client_vehicle_index][edge_node_index]) ** 2 < \
                     np.abs(self._channel_gains_between_client_vehicle_and_edge_nodes[client_vehicle_index][edge_node_index]) ** 2:
                     intra_edge_interference += \
-                        np.abs(self._channel_gains_between_client_vehicle_and_edge_nodes[other_client_vehicle_index][edge_node_index]) ** 2 * \
-                            self._client_vehicles[other_client_vehicle_index].get_transmission_power()
+                        (np.abs(self._channel_gains_between_client_vehicle_and_edge_nodes[other_client_vehicle_index][edge_node_index]) ** 2) * \
+                            cover_mW_to_W(self._client_vehicles[other_client_vehicle_index].get_transmission_power())
         
         inter_edge_interference = 0
-        for other_edge_node_index in range(self._env_profile.get_edge_num()):
-            if other_edge_node_index != edge_node_index:
-                client_vehicle_index_list = now_action.get_offloading_decision_at_edge_node(other_edge_node_index)
-                for other_client_vehicle_index in client_vehicle_index_list:
-                    if other_client_vehicle_index != client_vehicle_index:
-                        inter_edge_interference += \
-                            np.abs(self._channel_gains_between_client_vehicle_and_edge_nodes[other_client_vehicle_index][edge_node_index]) ** 2 * \
-                                self._client_vehicles[other_client_vehicle_index].get_transmission_power()
+        # for other_edge_node_index in range(self._env_profile.get_edge_num()):
+        #     if other_edge_node_index != edge_node_index:
+        #         client_vehicle_index_list = now_action.get_offloading_decision_at_edge_node(other_edge_node_index)
+        #         for other_client_vehicle_index in client_vehicle_index_list:
+        #             if other_client_vehicle_index != client_vehicle_index:
+        #                 inter_edge_interference += \
+        #                     (np.abs(self._channel_gains_between_client_vehicle_and_edge_nodes[other_client_vehicle_index][edge_node_index]) ** 2) * \
+        #                         cover_mW_to_W(self._client_vehicles[other_client_vehicle_index].get_transmission_power())
+        
+        white_gaussian_noise = self._env_profile.get_white_gaussian_noise()
+        channel_gain = self._channel_gains_between_client_vehicle_and_edge_nodes[client_vehicle_index][edge_node_index]
+        transmission_power = self._client_vehicles[client_vehicle_index].get_transmission_power()
+                
+        inr = compute_INR(
+            white_gaussian_noise=white_gaussian_noise,
+            intra_edge_interference=intra_edge_interference,
+            inter_edge_interference=inter_edge_interference,
+        )
+        
+        s = compute_S(
+            channel_gain=channel_gain,
+            transmission_power=transmission_power,
+        )
+        
+        n_sinr = s / inr
         
         sinr = compute_V2I_SINR(
             white_gaussian_noise=self._env_profile.get_white_gaussian_noise(),
@@ -650,6 +738,12 @@ class env(object):
                     + "task_processed_at_other_edge_at_time: " + str(self._task_processed_at_other_edge_at_time) + "\n" \
                     + "task_processed_at_cloud_at_time: " + str(self._task_processed_at_cloud_at_time) + "\n" \
                     + "task_successfully_processed_num_at_time: " + str(self._task_successfully_processed_num_at_time) + "\n" \
+                    + "task_successfully_processed_num_at_local_at_time: " + str(self._task_successfully_processed_num_at_local_at_time) + "\n" \
+                    + "task_successfully_processed_num_at_vehicle_at_time: " + str(self._task_successfully_processed_num_at_vehicle_at_time) + "\n" \
+                    + "task_successfully_processed_num_at_edge_at_time: " + str(self._task_successfully_processed_num_at_edge_at_time) + "\n" \
+                    + "task_successfully_processed_num_at_local_edge_at_time: " + str(self._task_successfully_processed_num_at_local_edge_at_time) + "\n" \
+                    + "task_successfully_processed_num_at_other_edge_at_time: " + str(self._task_successfully_processed_num_at_other_edge_at_time) + "\n" \
+                    + "task_successfully_processed_num_at_cloud_at_time: " + str(self._task_successfully_processed_num_at_cloud_at_time) + "\n" \
                     + "task_num_sum: " + str(sum(self._task_num_at_time)) + "\n" \
                     + "task_successfully_processed_num_sum: " + str(sum(self._task_successfully_processed_num_at_time)) + "\n" \
                     + "service_ratio: " + str(sum(self._task_successfully_processed_num_at_time) / sum(self._task_num_at_time)))

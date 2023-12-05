@@ -2,6 +2,19 @@ import numpy as np
 import time
 from Utilities.conversion import cover_dBm_to_W, cover_mW_to_W, cover_MHz_to_Hz, cover_MB_to_bit, cover_Mbps_to_bps, cover_GHz_to_Hz
 
+def compute_INR(
+    white_gaussian_noise: int,
+    intra_edge_interference: float,
+    inter_edge_interference: float
+) -> float:
+    return (cover_dBm_to_W(white_gaussian_noise) + intra_edge_interference + inter_edge_interference)
+
+def compute_S(
+    channel_gain: float,
+    transmission_power: float,
+) -> float:
+    return (np.abs(channel_gain) ** 2) * cover_mW_to_W(transmission_power)
+
 def compute_V2I_SINR(
     white_gaussian_noise: int,
     channel_gain: float,

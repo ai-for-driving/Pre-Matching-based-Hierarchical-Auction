@@ -25,9 +25,19 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
         client_vehicle = client_vehicles[client_vehicle_index]
         tasks_list = client_vehicle.get_tasks_by_time(now=now)
         requested_computing_resources = 0       # cycles
+        requested_computing_resources_at_local = 0       # cycles
+        requested_computing_resources_at_vehicle = 0        # cycles
+        requested_computing_resources_at_local_edge = 0     # cycles
+        requested_computing_resources_at_other_edge = 0     # cycles
+        requested_computing_resources_at_cloud = 0          # cycles
         requested_storage_resources = 0         # bits
         for task_tuple in tasks_list:
             requested_computing_resources += tasks[task_tuple[1]].get_requested_computing_resources()
+            requested_computing_resources_at_local += tasks[task_tuple[1]].get_requested_computing_resources_at_local()
+            requested_computing_resources_at_vehicle += tasks[task_tuple[1]].get_requested_computing_resources_at_vehicle()
+            requested_computing_resources_at_local_edge += tasks[task_tuple[1]].get_requested_computing_resources_at_local_edge()
+            requested_computing_resources_at_other_edge += tasks[task_tuple[1]].get_requested_computing_resources_at_other_edge()
+            requested_computing_resources_at_cloud += tasks[task_tuple[1]].get_requested_computing_resources_at_cloud()
             requested_storage_resources += cover_MB_to_bit(tasks[task_tuple[1]].get_input_data_size())
         
         # print("*" * 50)
@@ -39,7 +49,7 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
         # print("requested_computing_resources <= cover_GHz_to_Hz(client_vehicle.get_available_computing_capability(now=now)): ", requested_computing_resources <= cover_GHz_to_Hz(client_vehicle.get_available_computing_capability(now=now)))
         # print("requested_storage_resources <= cover_MB_to_bit(client_vehicle.get_available_storage_capability(now=now)): ", requested_storage_resources <= cover_MB_to_bit(client_vehicle.get_available_storage_capability(now=now)))
         
-        if requested_computing_resources <= cover_GHz_to_Hz(client_vehicle.get_available_computing_capability(now=now)) and \
+        if requested_computing_resources_at_local <= cover_GHz_to_Hz(client_vehicle.get_available_computing_capability(now=now)) and \
             requested_storage_resources <= cover_MB_to_bit(client_vehicle.get_available_storage_capability(now=now)):
             output_action.set_offloading_decision_at_local(
                 client_vehicle_index=client_vehicle_index,
@@ -47,7 +57,7 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
             )
             output_action.set_computing_resource_decision_at_local(
                 client_vehicle_index=client_vehicle_index,
-                computing_resource_decision=requested_computing_resources / cover_GHz_to_Hz(client_vehicle.get_available_computing_capability(now=now)),
+                computing_resource_decision=requested_computing_resources_at_local / cover_GHz_to_Hz(client_vehicle.get_available_computing_capability(now=now)),
             )
             continue
         
@@ -57,6 +67,11 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
             vehicle_indexs=[client_vehicle_index],
             time_slot_index=now,
             requested_computing_resources=requested_computing_resources,
+            requested_computing_resources_at_local=requested_computing_resources_at_local,
+            requested_computing_resources_at_vehicle=requested_computing_resources_at_vehicle,
+            requested_computing_resources_at_local_edge=requested_computing_resources_at_local_edge,
+            requested_computing_resources_at_other_edge=requested_computing_resources_at_other_edge,
+            requested_computing_resources_at_cloud=requested_computing_resources_at_cloud,
             requested_storage_resources=requested_storage_resources,
             bid=0,
             payment=0,
@@ -74,6 +89,7 @@ def init_buyers_and_sellers_at_vehicle_edge_auction(
             ask=0,
             payment=0,
         ))
+        
     for edge_node_index in range(len(edge_nodes)):
         edge_node = edge_nodes[edge_node_index]
         sellers.append(auction_seller(
@@ -186,7 +202,7 @@ def resource_allocation_and_pricing(
             requested_storage_resources = 0
             if sellers[0].get_type() == "vehicle":
                 for buyer in buyers:
-                    requested_computing_resources += buyer.get_requested_computing_resources()
+                    requested_computing_resources += buyer.get_requested_computing_resources_at_vehicle()
                     requested_storage_resources += buyer.get_requested_storage_resources()
                     if requested_computing_resources <= sellers[0].get_offered_computing_resources() and \
                         requested_storage_resources <= sellers[0].get_offered_storage_resources():
@@ -195,7 +211,6 @@ def resource_allocation_and_pricing(
                         break
             elif sellers[0].get_type() == "edge_node":
                 for buyer in buyers:
-                    requested_computing_resources += buyer.get_requested_computing_resources()
                     requested_storage_resources += buyer.get_requested_storage_resources()
                     if requested_storage_resources <= sellers[0].get_offered_storage_resources():
                         offloading_decision[buyer.get_index()][server_vehicle_number + sellers[0].get_index()] = 1
@@ -229,7 +244,7 @@ def resource_allocation_and_pricing(
                 for buyer in buyers:
                     if buyer.get_type() == "vehicle" and \
                         buyer.get_index() == client_vehicle_index:
-                        requested_computing_resources = buyer.get_requested_computing_resources()
+                        requested_computing_resources = buyer.get_requested_computing_resources_at_vehicle()
                 output_action.set_offloading_decision_of_vehicle_to_vehicle(
                     client_vehicle_index=client_vehicle_index,
                     server_vehicle_index=min_index,
@@ -247,7 +262,7 @@ def resource_allocation_and_pricing(
                 for buyer in buyers:
                     if buyer.get_type() == "vehicle" and \
                         buyer.get_index() == client_vehicle_index:
-                        requested_computing_resources = buyer.get_requested_computing_resources()
+                        requested_computing_resources = buyer.get_requested_computing_resources_at_local_edge()
                 output_action.set_offloading_decision_of_vehicle_to_edge_node(
                     client_vehicle_index=client_vehicle_index,
                     edge_node_index=min_index - server_vehicle_number,
